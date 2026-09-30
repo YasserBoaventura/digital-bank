@@ -8,6 +8,8 @@ public class DigitalBankApplication {
 
 	public static void main(String[] args) {
 		SpringApplication.run(DigitalBankApplication.class, args);
+
+		System.out.println("Works!");
 	}
 
 }
