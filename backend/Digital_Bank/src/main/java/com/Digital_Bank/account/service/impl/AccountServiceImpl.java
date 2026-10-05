@@ -224,4 +224,8 @@ public class AccountServiceImpl implements AccountService {
                 account.getUpdatedAt()
         );
     }
+
+    public List<Account> findAll(){
+        return accountRepository.findAll();
+    }
 }

@@ -11,13 +11,13 @@ public record UpdateCustomerRequest(
         @Size(max = 150)
         String fullName,
 
-        @Email(message = "Email inválido")
+        @Email(message = "Email  invalid")
         String email,
 
         @Size(max = 30)
         String phone,
 
-        @Past(message = "Data de nascimento deve estar no passado")
+        @Past(message = "Date of birth must be in the past.")
         LocalDate dateOfBirth
 ) {
 }

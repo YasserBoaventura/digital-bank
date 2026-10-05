@@ -1,5 +1,6 @@
 package com.Digital_Bank.account.service;
 
+import com.Digital_Bank.account.domain.entity.Account;
 import com.Digital_Bank.account.domain.enums.AccountStatus;
 import com.Digital_Bank.account.domain.enums.AccountType;
 import com.Digital_Bank.account.dto.request.CreateAccountRequest;
@@ -42,4 +43,5 @@ public interface AccountService {
     AccountResponse block(UUID id);
 
 
+    List<Account> findAll();
 }

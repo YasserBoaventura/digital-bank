@@ -1,6 +1,7 @@
 package com.Digital_Bank.account.controller;
 
 
+import com.Digital_Bank.account.domain.entity.Account;
 import com.Digital_Bank.account.domain.enums.AccountStatus;
 import com.Digital_Bank.account.domain.enums.AccountType;
 import com.Digital_Bank.account.dto.request.CreateAccountRequest;
@@ -15,6 +16,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
 import java.util.UUID;
 
 @RestController
@@ -30,8 +32,12 @@ public class AccountController {
                 @Valid @RequestBody CreateAccountRequest request) {
             return accountService.create(request);
         }
+    @GetMapping
+    public List<Account> findAll() {
+       return   accountService.findAll();
+    }
 
-        @GetMapping("/{id}")
+    @GetMapping("/{id}")
         public AccountResponse findById(
                 @PathVariable UUID id) {
             return accountService.findById(id);
@@ -107,6 +113,7 @@ public class AccountController {
                 @PathVariable UUID id) {
             return accountService.block(id);
         }
+
 
 
 

@@ -20,8 +20,12 @@ public class SecurityConfig {
                     .authorizeHttpRequests(auth -> auth
                             .requestMatchers(
                                     "/api/customers/**",
+                                    "/api/accounts/**",
+                                    "/api/transfers/**",
+                                    "/api/transactions/**",
                                     "/swagger-ui/**",
                                     "/v3/api-docs/**"
+
                             ).permitAll()
                             .anyRequest().authenticated()
                     );

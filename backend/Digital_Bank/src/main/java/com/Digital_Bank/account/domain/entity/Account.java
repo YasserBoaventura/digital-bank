@@ -3,12 +3,17 @@ package com.Digital_Bank.account.domain.entity;
 import com.Digital_Bank.account.domain.enums.AccountStatus;
 import com.Digital_Bank.account.domain.enums.AccountType;
 import com.Digital_Bank.costumer.domain.entity.Customer;
+import com.Digital_Bank.transaction.domain.entity.Transaction;
 import jakarta.persistence.*;
 import lombok.*;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
+
+
     @Entity
     @Table(
         name = "accounts",
@@ -95,6 +100,12 @@ public class Account {
                 currency = "MZN";
             }
         }
+        //
+        @OneToMany(
+                mappedBy = "account",
+                fetch = FetchType.LAZY
+        )
+        private List<Transaction> transactions = new ArrayList<>();
 
         @PreUpdate
         protected void onUpdate() {

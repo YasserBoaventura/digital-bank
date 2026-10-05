@@ -6,24 +6,24 @@ import java.time.LocalDate;
 
 public record CreateCustomerRequest(
 
-    @NotBlank(message = "Nome completo é obrigatório")
+    @NotBlank(message = "Full name is required.")
     @Size(max = 150)
     String fullName,
 
-    @NotBlank(message = "Email é obrigatório")
-    @Email(message = "Email inválido")
+    @NotBlank(message = "Email is required")
+    @Email(message = "Email invalid")
     String email,
 
-    @NotBlank(message = "Telefone é obrigatório")
+    @NotBlank(message = "phone number is required")
     @Size(max = 30)
     String phone,
 
-    @NotBlank(message = "Número do documento é obrigatório")
+    @NotBlank(message = "number document is required")
     @Size(max = 50)
     String documentNumber,
 
-    @NotNull(message = "Data de nascimento é obrigatória")
-    @Past(message = "Data de nascimento deve estar no passado")
+    @NotNull(message = "Date of birth is required")
+    @Past(message = "Date of birth must be in the past.")
     LocalDate dateOfBirth
 ) {
 
