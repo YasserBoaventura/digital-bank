@@ -196,23 +196,23 @@ public class TransferServiceImpl  implements TransferService {
         @Transactional(readOnly = true)
         @Override
         public Page<TransferResponse> findBySenderAccount(
-                UUID accountId,
+                String accountNumber,
                 Pageable pageable
         ) {
 
             return transferRepository
-                    .findBySenderAccountId(accountId, pageable)
+                    .findBySenderAccountAccountNumber(accountNumber, pageable)
                     .map(this::mapToResponse);
         }
 
         @Transactional(readOnly = true)
         public Page<TransferResponse> findByReceiverAccount(
-                UUID accountId,
+                String accountNumber,
                 Pageable pageable
         ) {
 
             return transferRepository
-                    .findByReceiverAccountId(accountId, pageable)
+                    .findByReceiverAccountAccountNumber(accountNumber, pageable)
                     .map(this::mapToResponse);
         }
 

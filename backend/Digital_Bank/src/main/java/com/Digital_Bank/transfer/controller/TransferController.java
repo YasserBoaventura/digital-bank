@@ -49,9 +49,9 @@ public class TransferController {
             );
         }
 
-        @GetMapping("/sender/{accountId}")
+        @GetMapping("/sender/{accountNumber}")
         public ResponseEntity<Page<TransferResponse>> findBySenderAccount(
-                @PathVariable UUID accountId,
+                @PathVariable  String accountNumber,
                 @RequestParam(defaultValue = "0") int page,
                 @RequestParam(defaultValue = "10") int size
         ) {
@@ -66,15 +66,15 @@ public class TransferController {
             );
             return ResponseEntity.ok(
                     transferService.findBySenderAccount(
-                            accountId,
+                            accountNumber,
                             pageable
                     )
             );
         }
 
-        @GetMapping("/receiver/{accountId}")
+        @GetMapping("/receiver/{accountNumber}")
         public ResponseEntity<Page<TransferResponse>> findByReceiverAccount(
-                @PathVariable UUID accountId,
+                @PathVariable String accountNumber,
                 @RequestParam(defaultValue = "0") int page,
                 @RequestParam(defaultValue = "10") int size
         ) {
@@ -88,7 +88,7 @@ public class TransferController {
             );
             return ResponseEntity.ok(
                     transferService.findByReceiverAccount(
-                            accountId,
+                            accountNumber,
                             pageable
                     )
             );

@@ -20,13 +20,13 @@ public interface TransferRepository  extends JpaRepository<Transfer, UUID>{
 
         boolean existsByReference(String reference);
 
-        Page<Transfer> findBySenderAccountId(
-                UUID senderAccountId,
+        Page<Transfer> findBySenderAccountAccountNumber(
+                String accountNumber,
                 Pageable pageable
         );
 
-        Page<Transfer> findByReceiverAccountId(
-                UUID receiverAccountId,
+        Page<Transfer> findByReceiverAccountAccountNumber(
+                String accountNumber,
                 Pageable pageable
         );
 

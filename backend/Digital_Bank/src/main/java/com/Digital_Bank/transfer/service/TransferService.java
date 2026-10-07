@@ -14,13 +14,12 @@ public interface TransferService {
 
     TransferResponse findByReference(String reference);
 
-    Page<TransferResponse> findBySenderAccount(
-            UUID accountId,
+    Page<TransferResponse> findBySenderAccount(  String accountNumber,
             Pageable pageable
     );
 
     Page<TransferResponse> findByReceiverAccount(
-            UUID accountId,
+            String accountNumber,
             Pageable pageable
     );
 
