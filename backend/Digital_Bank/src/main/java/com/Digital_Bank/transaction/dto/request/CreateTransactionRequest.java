@@ -10,9 +10,9 @@ import java.util.UUID;
 public record CreateTransactionRequest(
 
 
-        @NotNull(message = "Account ID is required")
+        @NotNull(message = "Account number is required")
 
-        UUID accountId,
+        String accountNumber,
 
         @NotNull(message = "Amount is required")
         @DecimalMin(

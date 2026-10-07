@@ -12,9 +12,9 @@ public record TransferResponse(
 
         UUID id,
 
-        UUID senderAccountId,
+        String senderAccountNumber,
 
-        UUID receiverAccountId,
+        String receiverAccountNumber,
 
         TransferType type,
 

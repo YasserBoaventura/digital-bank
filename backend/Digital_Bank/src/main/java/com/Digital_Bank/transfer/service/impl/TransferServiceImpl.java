@@ -42,31 +42,36 @@ public class TransferServiceImpl  implements TransferService {
 
         @Transactional
         @Override
-        public TransferResponse create(CreateTransferRequest request) {
+    public TransferResponse create(CreateTransferRequest request) {
 
-        if (request.senderAccountId()
-                .equals(request.receiverAccountId())) {
+    if (request.senderAccountNumber()
+            .equals(request.receiverAccountNumber())) {
 
-            throw new SameAccountTransferException(
-                    "Sender and receiver accounts must be different"
+        throw new SameAccountTransferException(
+                "Sender and receiver accounts must be different"
+        );
+    }
+
+
+    Account sender = accountRepository
+            .findByAccountNumberForUpdate(
+                    request.senderAccountNumber()
+            )
+            .orElseThrow(() ->
+                    new TransferAccountException(
+                            "Sender account not found"
+                    )
             );
-        }
 
-        Account sender = accountRepository
-                .findByIdForUpdate(request.senderAccountId())
-                .orElseThrow(() ->
-                        new TransferAccountException(
-                                "Sender account not found"
-                        )
-                );
-
-        Account receiver = accountRepository
-                .findByIdForUpdate(request.receiverAccountId())
-                .orElseThrow(() ->
-                        new TransferAccountException(
-                                "Receiver account not found"
-                        )
-                );
+    Account receiver = accountRepository
+            .findByAccountNumberForUpdate(
+                    request.receiverAccountNumber()
+            )
+            .orElseThrow(() ->
+                    new TransferAccountException(
+                            "Receiver account not found"
+                    )
+            );
 
         validateAccount(sender, "Sender account");
         validateAccount(receiver, "Receiver account");
@@ -240,8 +245,8 @@ public class TransferServiceImpl  implements TransferService {
 
             return new TransferResponse(
                     transfer.getId(),
-                    transfer.getSenderAccount().getId(),
-                    transfer.getReceiverAccount().getId(),
+                    transfer.getSenderAccount().getAccountNumber(),
+                    transfer.getReceiverAccount().getAccountNumber(),
                     transfer.getType(),
                     transfer.getStatus(),
                     transfer.getAmount(),

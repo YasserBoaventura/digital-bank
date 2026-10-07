@@ -1,6 +1,7 @@
 package com.Digital_Bank.transfer.dto.reponse;
 
 import jakarta.validation.constraints.DecimalMin;
+import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 
@@ -9,23 +10,24 @@ import java.util.UUID;
 
 public record CreateTransferRequest (
 
-        @NotNull(message = "Sender account ID is required")
-        UUID senderAccountId,
+        @NotBlank(message = "Sender account number is required")
+        String senderAccountNumber,
 
-        @NotNull(message = "Receiver account ID is required")
-        UUID receiverAccountId,
+            @NotBlank(message = "Receiver account number is required")
+            String receiverAccountNumber,
 
-        @NotNull(message = "Amount is required")
-        @DecimalMin(
-                value = "0.01",
-                message = "Transfer amount must be greater than zero"
-        )
-        BigDecimal amount,
+    @NotNull(message = "Amount is required")
+    @DecimalMin(
+            value = "0.01",
+            message = "Transfer amount must be greater than zero"
+    )
+    BigDecimal amount,
 
-        @Size(
-                max = 255,
-                message = "Description cannot exceed 255 characters"
-        )
-        String description
+    @Size(
+            max = 255,
+            message = "Description cannot exceed 255 characters"
+    )
+    String description
 ) {
+
 }

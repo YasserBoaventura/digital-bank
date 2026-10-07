@@ -14,16 +14,16 @@ import java.util.List;
 import java.util.UUID;
 
 
-    @Entity
-    @Table(
-        name = "accounts",
-        uniqueConstraints = {
-                @UniqueConstraint(
-                        name = "uk_account_number",
-                        columnNames = "account_number"
-                )
-        }
-    )
+@Entity
+@Table(
+    name = "accounts",
+    uniqueConstraints = {
+            @UniqueConstraint(
+                    name = "uk_account_number",
+                    columnNames = "account_number"
+            )
+    }
+)
 @Getter
 @Setter
 @NoArgsConstructor

@@ -9,7 +9,6 @@ import com.Digital_Bank.transaction.dto.request.CreateTransactionRequest;
 import com.Digital_Bank.transaction.dto.response.TransactionResponse;
 import com.Digital_Bank.transaction.repository.TransactionRepository;
 import com.Digital_Bank.transaction.service.TransactionService;
-import com.Digital_Bank.transaction.shared.exception.InsufficientBalanceException;
 import jakarta.persistence.EntityNotFoundException;
 import org.springframework.transaction.annotation.Transactional;
 import lombok.RequiredArgsConstructor;
@@ -33,8 +32,8 @@ public class TransactionServiceImpl  implements TransactionService {
             CreateTransactionRequest request
     ) {
 
-        Account account = findAccountForUpdate(
-                request.accountId()
+        Account account = findByAccountNumberForUpdate(
+                request.accountNumber()
         );
 
         validateAmount(request.amount());
@@ -69,8 +68,9 @@ public class TransactionServiceImpl  implements TransactionService {
     public TransactionResponse withdraw(
             CreateTransactionRequest request
     ) {
-        Account account = findAccountForUpdate(
-                request.accountId());
+        Account account = findByAccountNumberForUpdate(
+                request.accountNumber()
+        );
 
         validateAmount(request.amount());
 
@@ -78,48 +78,49 @@ public class TransactionServiceImpl  implements TransactionService {
                 getBalance(account);
 
         if (balanceBefore.compareTo(request.amount()) < 0) {
-            throw new InsufficientBalanceException(
+
+            throw new IllegalStateException(
                     "Insufficient account balance"
             );
         }
 
-    BigDecimal balanceAfter =
-            balanceBefore.subtract(
-                    request.amount()
-            );
-
-    account.setBalance(balanceAfter);
-
-    accountRepository.save(account);
-
-    Transaction transaction = Transaction.builder()
-            .account(account)
-            .type(TransactionType.WITHDRAWAL)
-            .status(TransactionStatus.COMPLETED)
-            .amount(request.amount())
-            .balanceBefore(balanceBefore)
-            .balanceAfter(balanceAfter)
-            .description(request.description())
-            .build();
-
-    Transaction saved =
-            transactionRepository.save(transaction);
-
-    return toResponse(saved);
-}
-
-    @Transactional(readOnly = true)
-    public TransactionResponse findById(
-            UUID id
-    ) {
-
-Transaction transaction =
-        transactionRepository.findById(id)
-                .orElseThrow(() ->
-                        new EntityNotFoundException(
-                                "Transaction not found: " + id
-                        )
+        BigDecimal balanceAfter =
+                balanceBefore.subtract(
+                        request.amount()
                 );
+
+        account.setBalance(balanceAfter);
+
+        accountRepository.save(account);
+
+        Transaction transaction = Transaction.builder()
+                .account(account)
+                .type(TransactionType.WITHDRAWAL)
+                .status(TransactionStatus.COMPLETED)
+                .amount(request.amount())
+                .balanceBefore(balanceBefore)
+                .balanceAfter(balanceAfter)
+                .description(request.description())
+                .build();
+
+        Transaction saved =
+                transactionRepository.save(transaction);
+
+        return toResponse(saved);
+    }
+
+        @Transactional(readOnly = true)
+        public TransactionResponse findById(
+                UUID id
+        ) {
+
+    Transaction transaction =
+            transactionRepository.findById(id)
+                    .orElseThrow(() ->
+                            new EntityNotFoundException(
+                                    "Transaction not found: " + id
+                            )
+                    );
 
     return toResponse(transaction);
     }
@@ -131,46 +132,46 @@ Transaction transaction =
 
     Transaction transaction =
             transactionRepository
-            .findByReference(reference)
-            .orElseThrow(() ->
-                    new EntityNotFoundException(
-                            "Transaction not found with reference: "
-                                    + reference
-                    )
-            );
+                    .findByReference(reference)
+                    .orElseThrow(() ->
+                            new EntityNotFoundException(
+                                    "Transaction not found with reference: "
+                                            + reference
+                            )
+                    );
 
     return toResponse(transaction);
     }
 
-    @Transactional(readOnly = true)
-    public Page<TransactionResponse> findByAccount(
-            UUID accountId,
-            Pageable pageable
-    ) {
+        @Transactional(readOnly = true)
+        public Page<TransactionResponse> findByAccount(
+                UUID accountId,
+                Pageable pageable
+        ) {
 
-        return transactionRepository
-                .findByAccountId(
-                        accountId,
-                        pageable
-                )
-                .map(this::toResponse);
-    }
+            return transactionRepository
+                    .findByAccountId(
+                            accountId,
+                            pageable
+                    )
+                    .map(this::toResponse);
+        }
 
-    @Transactional(readOnly = true)
-    public Page<TransactionResponse> findByAccountAndType(
-            UUID accountId,
-            TransactionType type,
-            Pageable pageable
-    ) {
+        @Transactional(readOnly = true)
+        public Page<TransactionResponse> findByAccountAndType(
+                UUID accountId,
+                TransactionType type,
+                Pageable pageable
+        ) {
 
-        return transactionRepository
-                .findByAccountIdAndType(
-                        accountId,
-                        type,
-                        pageable
-                )
-                .map(this::toResponse);
-    }
+            return transactionRepository
+                    .findByAccountIdAndType(
+                            accountId,
+                            type,
+                            pageable
+                    )
+                    .map(this::toResponse);
+        }
 
         @Transactional(readOnly = true)
         public Page<TransactionResponse> findByAccountAndStatus(
@@ -179,14 +180,14 @@ Transaction transaction =
                 Pageable pageable
         ) {
 
-        return transactionRepository
-                .findByAccountIdAndStatus(
-                        accountId,
-                        status,
-                        pageable
-                )
-                .map(this::toResponse);
-    }
+            return transactionRepository
+                    .findByAccountIdAndStatus(
+                            accountId,
+                            status,
+                            pageable
+                    )
+                    .map(this::toResponse);
+        }
 
         @Transactional(readOnly = true)
         public Page<TransactionResponse> findByType(
@@ -210,18 +211,18 @@ Transaction transaction =
                     .map(this::toResponse);
         }
 
-        private Account findAccountForUpdate(
-                UUID accountId
+        private Account findByAccountNumberForUpdate(
+                String accoutNumber
         ) {
 
-        return accountRepository
-                .findByIdForUpdate(accountId)
-                .orElseThrow(() ->
-                        new EntityNotFoundException(
-                                "Account not found: " + accountId
-                        )
-                );
-    }
+            return accountRepository
+                    .findByAccountNumber(accoutNumber)
+                    .orElseThrow(() ->
+                            new EntityNotFoundException(
+                                    "Account not found: " + accoutNumber
+                            )
+                    );
+        }
 
         private void validateAmount(
                 BigDecimal amount
