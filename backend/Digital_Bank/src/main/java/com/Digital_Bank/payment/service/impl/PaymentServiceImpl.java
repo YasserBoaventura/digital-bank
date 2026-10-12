@@ -193,7 +193,8 @@ public class PaymentServiceImpl implements PaymentService {
                             pageable
                     )
                     .map(this::mapToResponse);
-            if(payments.isEmpty()){
+
+              if(payments.isEmpty()){
                 throw new PaymentNotFoundException(
                         "No payments found for account number: "
                                 + accountNumber);
