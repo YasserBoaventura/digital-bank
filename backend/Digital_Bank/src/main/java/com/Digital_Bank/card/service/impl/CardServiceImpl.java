@@ -36,32 +36,32 @@ public class CardServiceImpl implements CardService {
     @Transactional
     public CardResponse create(CreateCardRequest request) {
 
-        Account account = accountRepository
-                .findByAccountNumber(request.accountNumber())
-                .orElseThrow(() -> new CardProcessingException(
-                        "Account not found: " + request.accountNumber()
-                ));
+    Account account = accountRepository
+            .findByAccountNumber(request.accountNumber())
+        .orElseThrow(() -> new CardProcessingException(
+                "Account not found: " + request.accountNumber()
+        ));
 
-        if (account.getStatus() != AccountStatus.ACTIVE) {
-            throw new CardProcessingException(
-                    "Cannot issue a card for an inactive account"
-            );
-        }
+    if (account.getStatus() != AccountStatus.ACTIVE) {
+        throw new CardProcessingException(
+                "Cannot issue a card for an inactive account"
+        );
+    }
 
-            String lastFour = String.format(
-                    "%04d",
-                    RANDOM.nextInt(10_000)
-            );
+        String lastFour = String.format(
+                "%04d",
+                RANDOM.nextInt(10_000)
+        );
 
-        Card card = Card.builder()
-                .account(account)
-                .maskedNumber("**** **** **** " + lastFour)
-                .lastFour(lastFour)
-                .type(request.type())
-                .brand(request.brand())
-                .status(CardStatus.ACTIVE)
-                .expiryDate(LocalDate.now().plusYears(4))
-                .build();
+    Card card = Card.builder()
+        .account(account)
+            .maskedNumber("**** **** **** " + lastFour)
+            .lastFour(lastFour)
+            .type(request.type())
+            .brand(request.brand())
+            .status(CardStatus.ACTIVE)
+            .expiryDate(LocalDate.now().plusYears(4))
+            .build();
 
         Card savedCard = cardRepository.save(card);
 
@@ -76,9 +76,9 @@ public class CardServiceImpl implements CardService {
         @Override
         public CardResponse findByReference(String reference) {
             Card card = cardRepository.findByReference(reference)
-                    .orElseThrow(() -> new CardNotFoundException(
-                            "Card not found with reference: " + reference
-                    ));
+                .orElseThrow(() -> new CardNotFoundException(
+                        "Card not found with reference: " + reference
+                ));
 
             return mapToResponse(card);
         }
@@ -143,19 +143,19 @@ public class CardServiceImpl implements CardService {
         return cards;
     }
 
-        @Override
-        public Page<CardResponse> findByStatus(
-                CardStatus status,
-                Pageable pageable
-        ) {
-            Page<CardResponse> cards = cardRepository
-                    .findByStatus(status, pageable)
-                    .map(this::mapToResponse);
+    @Override
+    public Page<CardResponse> findByStatus(
+            CardStatus status,
+            Pageable pageable
+    ) {
+        Page<CardResponse> cards = cardRepository
+                .findByStatus(status, pageable)
+                .map(this::mapToResponse);
 
-            if (cards.isEmpty()) {
-                throw new CardNotFoundException(
-                        "No cards found with status: " + status
-                );
+        if (cards.isEmpty()) {
+            throw new CardNotFoundException(
+                    "No cards found with status: " + status
+            );
             }
 
             return cards;
