@@ -157,7 +157,7 @@ public CustomerResponse deactivate(UUID id) {
 
 Customer customer = customerRepository.findById(id)
         .orElseThrow(() ->
-                new ResourceNotFoundException("Cliente não encontrado"));
+        new ResourceNotFoundException("Cliente não encontrado"));
 
 if (customer.getStatus() == CustomerStatus.BLOCKED) {
     throw new BussinesException(

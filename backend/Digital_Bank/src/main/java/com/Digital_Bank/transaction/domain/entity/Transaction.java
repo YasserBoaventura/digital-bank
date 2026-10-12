@@ -41,7 +41,6 @@ import java.util.UUID;
 @Builder
 public class Transaction  implements Serializable {
 
-
         @Id
         @GeneratedValue(strategy = GenerationType.UUID)
         private UUID id;

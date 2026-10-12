@@ -71,7 +71,6 @@ public class TransferController {
                     )
             );
         }
-
         @GetMapping("/receiver/{accountNumber}")
         public ResponseEntity<Page<TransferResponse>> findByReceiverAccount(
                 @PathVariable String accountNumber,

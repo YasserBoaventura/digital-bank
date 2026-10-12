@@ -132,13 +132,13 @@ public class TransactionServiceImpl  implements TransactionService {
 
     Transaction transaction =
             transactionRepository
-                    .findByReference(reference)
-                    .orElseThrow(() ->
-                            new EntityNotFoundException(
-                                    "Transaction not found with reference: "
-                                            + reference
-                            )
-                    );
+            .findByReference(reference)
+            .orElseThrow(() ->
+                    new EntityNotFoundException(
+                            "Transaction not found with reference: "
+                                    + reference
+                    )
+            );
 
     return toResponse(transaction);
     }

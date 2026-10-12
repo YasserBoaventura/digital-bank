@@ -3,6 +3,7 @@ import java.time.LocalDateTime;
 import java.util.*;
 
 import com.Digital_Bank.costumer.shared.response.ApiErrorResponse;
+import com.Digital_Bank.payment.shared.exception.PaymentNotFoundException;
 import com.Digital_Bank.transaction.shared.exception.InsufficientBalanceException;
 import com.Digital_Bank.transaction.shared.response.ErrorResponse;
 import com.Digital_Bank.transfer.shared.exception.SameAccountTransferException;
@@ -99,6 +100,23 @@ public class GlobalExceptionHandler {
         ErrorResponse error = new ErrorResponse(
                 HttpStatus.NOT_FOUND.value(),
                 "Transfer not found",
+                ex.getMessage(),
+                LocalDateTime.now()
+        );
+
+        return ResponseEntity
+                .status(HttpStatus.NOT_FOUND)
+                .body(error);
+    }
+
+
+    @ExceptionHandler(PaymentNotFoundException.class)
+    public ResponseEntity<ErrorResponse> handlePaymentNotFound(
+            PaymentNotFoundException ex
+    ) {
+        ErrorResponse error = new ErrorResponse(
+                HttpStatus.NOT_FOUND.value(),
+                "Payment not found",
                 ex.getMessage(),
                 LocalDateTime.now()
         );

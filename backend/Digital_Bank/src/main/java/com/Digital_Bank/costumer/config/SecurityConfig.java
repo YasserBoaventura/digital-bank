@@ -23,6 +23,7 @@ public class SecurityConfig {
                                     "/api/accounts/**",
                                     "/api/transfers/**",
                                     "/api/transactions/**",
+                                    "/api/payments/**",
                                     "/swagger-ui/**",
                                     "/v3/api-docs/**"
 
