@@ -54,7 +54,7 @@ The project uses or plans to use the following technologies, depending on the im
 ### Planned Technologies
 
 - **Docker** — Containerization of the application and future services.
-- **RabbitMQ** — Asynchronous messaging and communication between services.
+- **Apache Kafka** — Asynchronous messaging and communication between services.
 - **API Gateway** — Centralized routing for microservices.
 - **Service Discovery and Centralized Configuration** — To be evaluated as the distributed architecture evolves.
 - **Automated Testing and CI/CD Tools** — To improve reliability and deployment workflows.
