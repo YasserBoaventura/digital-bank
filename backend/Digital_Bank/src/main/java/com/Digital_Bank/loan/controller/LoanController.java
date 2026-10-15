@@ -106,7 +106,6 @@ public class LoanController {
                 )
         );
     }
-
     @GetMapping("/type/{type}")
     public ResponseEntity<Page<LoanResponse>> findByType(
             @PathVariable LoanType type,
