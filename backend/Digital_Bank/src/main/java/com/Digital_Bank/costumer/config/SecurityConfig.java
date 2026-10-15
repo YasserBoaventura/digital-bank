@@ -11,26 +11,28 @@ import org.springframework.security.web.SecurityFilterChain;
 @EnableWebSecurity
 public class SecurityConfig {
 
-        @Bean
-        public SecurityFilterChain securityFilterChain(
-                HttpSecurity http) throws Exception {
+    @Bean
+    public SecurityFilterChain securityFilterChain(
+            HttpSecurity http) throws Exception {
 
-            http
-                    .csrf(csrf -> csrf.disable())
-                    .authorizeHttpRequests(auth -> auth
-                            .requestMatchers(
-                                    "/api/customers/**",
-                                    "/api/accounts/**",
-                                    "/api/transfers/**",
-                                    "/api/transactions/**",
-                                    "/api/payments/**",
-                                    "/swagger-ui/**",
-                                    "/v3/api-docs/**"
+        http
+            .csrf(csrf -> csrf.disable())
+            .authorizeHttpRequests(auth -> auth
+                    .requestMatchers(
+                            "/api/customers/**",
+                            "/api/accounts/**",
+                            "/api/transfers/**",
+                            "/api/transactions/**",
+                            "/api/payments/**",
+                            "/api/cards/**",
+                            "/api/loans/**",
+                            "/swagger-ui/**",
+                            "/v3/api-docs/**"
 
-                            ).permitAll()
-                            .anyRequest().authenticated()
-                    );
+                    ).permitAll()
+                    .anyRequest().authenticated()
+                );
 
-            return http.build();
+        return http.build();
         }
 }

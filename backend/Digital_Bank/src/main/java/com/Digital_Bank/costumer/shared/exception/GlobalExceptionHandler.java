@@ -2,7 +2,11 @@ package com.Digital_Bank.costumer.shared.exception;
 import java.time.LocalDateTime;
 import java.util.*;
 
+import com.Digital_Bank.card.shared.exception.CardNotFoundException;
+import com.Digital_Bank.card.shared.exception.CardProcessingException;
 import com.Digital_Bank.costumer.shared.response.ApiErrorResponse;
+import com.Digital_Bank.loan.shared.exception.LoanNotFoundException;
+import com.Digital_Bank.loan.shared.exception.LoanProcessingException;
 import com.Digital_Bank.payment.shared.exception.PaymentNotFoundException;
 import com.Digital_Bank.transaction.shared.exception.InsufficientBalanceException;
 import com.Digital_Bank.transaction.shared.response.ErrorResponse;
@@ -123,6 +127,66 @@ public class GlobalExceptionHandler {
 
         return ResponseEntity
                 .status(HttpStatus.NOT_FOUND)
+                .body(error);
+    }
+
+
+    @ExceptionHandler(CardProcessingException.class)
+    public ResponseEntity<ErrorResponse> handleCardProcessing(
+            CardProcessingException ex
+    ) {
+        ErrorResponse error = new ErrorResponse(
+                HttpStatus.UNPROCESSABLE_ENTITY.value(),
+                "Card processing error",
+                ex.getMessage(),
+                LocalDateTime.now()
+        );
+
+        return ResponseEntity
+                .status(HttpStatus.UNPROCESSABLE_ENTITY)
+                .body(error);
+    }
+@ExceptionHandler(CardNotFoundException.class)
+    public ResponseEntity<ErrorResponse> handleCardNotFoundException(CardNotFoundException ex){
+        ErrorResponse error = new ErrorResponse(
+                HttpStatus.NOT_FOUND.value(),
+                "Card not found",
+                ex.getMessage(),
+                LocalDateTime.now()
+        );
+        return ResponseEntity
+                .status(HttpStatus.NOT_FOUND)
+                .body(error);
+    }
+
+
+    @ExceptionHandler(LoanNotFoundException.class)
+    public ResponseEntity<ErrorResponse> handleLoanNotFound(
+            LoanNotFoundException ex
+    ) {
+        ErrorResponse error = new ErrorResponse(
+                HttpStatus.NOT_FOUND.value(),
+                "Loan not found",
+                ex.getMessage(),
+                LocalDateTime.now()
+        );
+
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(error);
+    }
+
+    @ExceptionHandler(LoanProcessingException.class)
+    public ResponseEntity<ErrorResponse> handleLoanProcessing(
+            LoanProcessingException ex
+    ) {
+        ErrorResponse error = new ErrorResponse(
+                HttpStatus.UNPROCESSABLE_ENTITY.value(),
+                "Loan processing error",
+                ex.getMessage(),
+                LocalDateTime.now()
+        );
+
+        return ResponseEntity
+                .status(HttpStatus.UNPROCESSABLE_ENTITY)
                 .body(error);
     }
 }

@@ -107,6 +107,16 @@ public class CardServiceImpl implements CardService {
             CardStatus status,
             Pageable pageable
     ) {
+
+        Page<Card> accountCards = cardRepository
+                .findByAccountAccountNumber(accountNumber, pageable);
+
+        if (accountCards.isEmpty()) {
+            throw new CardNotFoundException(
+                    "No card exists for account number: " + accountNumber
+            );
+        }
+
         Page<CardResponse> cards = cardRepository
                 .findByAccountAccountNumberAndStatus(
                         accountNumber, status, pageable
@@ -128,6 +138,15 @@ public class CardServiceImpl implements CardService {
             CardType type,
             Pageable pageable
     ) {
+
+        Page<Card> accountCards = cardRepository
+                .findByAccountAccountNumber(accountNumber, pageable);
+
+        if (accountCards.isEmpty()) {
+            throw new CardNotFoundException(
+                    "No card exists for account number: " + accountNumber
+            );
+        }
         Page<CardResponse> cards = cardRepository
                 .findByAccountAccountNumberAndType(
                         accountNumber, type, pageable
