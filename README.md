@@ -226,7 +226,7 @@ The following checklist represents the project's development direction. Update i
 - [ ] Strengthen financial operation consistency and concurrency handling.
 - [ ] Improve application configuration and deployment readiness.
 - [ ] Introduce Docker-based development and deployment.
-- [ ] Explore RabbitMQ integration.
+- [ ] Explore Apache Kafka integration.
 - [ ] Design and implement the transition to microservices.
 - [ ] Introduce monitoring, logging, and CI/CD improvements.
 
