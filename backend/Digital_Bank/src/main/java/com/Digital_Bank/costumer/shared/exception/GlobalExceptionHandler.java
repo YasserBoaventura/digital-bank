@@ -8,6 +8,8 @@ import com.Digital_Bank.costumer.shared.response.ApiErrorResponse;
 import com.Digital_Bank.loan.shared.exception.LoanNotFoundException;
 import com.Digital_Bank.loan.shared.exception.LoanProcessingException;
 import com.Digital_Bank.payment.shared.exception.PaymentNotFoundException;
+import com.Digital_Bank.savings.shared.exception.SavingsNotFoundException;
+import com.Digital_Bank.savings.shared.exception.SavingsProcessingException;
 import com.Digital_Bank.transaction.shared.exception.InsufficientBalanceException;
 import com.Digital_Bank.transaction.shared.response.ErrorResponse;
 import com.Digital_Bank.transfer.shared.exception.SameAccountTransferException;
@@ -185,6 +187,44 @@ public class GlobalExceptionHandler {
                 LocalDateTime.now()
         );
 
+        return ResponseEntity
+                .status(HttpStatus.UNPROCESSABLE_ENTITY)
+                .body(error);
+    }
+
+    @ExceptionHandler(SavingsNotFoundException.class)
+    public ResponseEntity<ErrorResponse> handleSavingsNotFound(
+            SavingsNotFoundException ex) {
+
+        // Ajusta a construção ao teu ErrorResponse existente.
+
+
+
+        ErrorResponse error = new ErrorResponse(
+                HttpStatus.NOT_FOUND.value(),
+                "Savings not found",
+                ex.getMessage(),
+                LocalDateTime.now()
+
+        );
+        return ResponseEntity
+                .status(HttpStatus.NOT_FOUND)
+                .body(error);
+    }
+
+
+    @ExceptionHandler(SavingsProcessingException.class)
+    public ResponseEntity<ErrorResponse> handleSavingsProcessing(
+            SavingsProcessingException ex) {
+
+
+        ErrorResponse error = new ErrorResponse(
+                HttpStatus.NOT_FOUND.value(),
+                "Savings processing error",
+                ex.getMessage(),
+                LocalDateTime.now()
+
+        );
         return ResponseEntity
                 .status(HttpStatus.UNPROCESSABLE_ENTITY)
                 .body(error);
