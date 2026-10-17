@@ -219,7 +219,7 @@ The following checklist represents the project's development direction. Update i
 - [x] Develop the initial payment module.
 - [x] Develop the initial card management module.
 - [x] Implement the initial loan management workflow.
-- [ ] Complete and refine the savings module.
+- [x] Complete and refine the savings module. 
 - [ ] Expand unit and integration test coverage.
 - [ ] Improve API documentation.
 - [ ] Review authentication and authorization with Spring Security.
