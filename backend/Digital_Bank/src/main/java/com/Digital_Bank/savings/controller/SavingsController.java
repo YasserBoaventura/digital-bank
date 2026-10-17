@@ -100,7 +100,6 @@ return ResponseEntity.ok(
                 savingsService.calculateInterest(id)
         );
     }
-
     @PatchMapping("/{id}/close")
     public ResponseEntity<SavingsResponse> close(
             @PathVariable UUID id) {

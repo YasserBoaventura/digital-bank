@@ -40,7 +40,6 @@ import java.util.UUID;
 public class SavingsServiceImpl implements SavingsService {
 
 
-
         private static final BigDecimal ZERO =
                 new BigDecimal("0.00");
 
@@ -96,9 +95,9 @@ public SavingsResponse findByReference(String reference) {
     Savings savings = savingsRepository
             .findByReference(reference)
             .orElseThrow(() ->
-                    new SavingsNotFoundException(
-                            "Savings account not found: " + reference
-                    )
+                new SavingsNotFoundException(
+                        "Savings account not found: " + reference
+                )
             );
 
     return toResponse(savings);
@@ -157,7 +156,7 @@ public SavingsResponse deposit(UUID id, BigDecimal amount) {
     account.setBalance(balanceAfter);
     savings.setBalance(savings.getBalance().add(amount));
 
-transactionRepository.save(
+    transactionRepository.save(
         buildTransaction(
                 account,
                 amount,
@@ -167,13 +166,11 @@ transactionRepository.save(
                 TransactionType.WITHDRAWAL
         )
 );
-
     accountRepository.save(account);
     Savings saved = savingsRepository.save(savings);
 
     return toResponse(saved);
 }
-
 @Override
 @Transactional
 public SavingsResponse withdraw(UUID id, BigDecimal amount) {
@@ -185,12 +182,12 @@ public SavingsResponse withdraw(UUID id, BigDecimal amount) {
             current.getAccount().getAccountNumber();
 
     Account account = accountRepository
-            .findByAccountNumberForUpdate(accountNumber)
-            .orElseThrow(() ->
-                    new SavingsProcessingException(
-                            "Bank account not found"
-                    )
-            );
+        .findByAccountNumberForUpdate(accountNumber)
+        .orElseThrow(() ->
+                new SavingsProcessingException(
+                        "Bank account not found"
+                )
+        );
 
     Savings savings = savingsRepository
             .findByIdForUpdate(id)
@@ -240,11 +237,10 @@ public SavingsResponse calculateInterest(UUID id) {
     Savings savings = savingsRepository
             .findByIdForUpdate(id)
             .orElseThrow(() ->
-                    new SavingsNotFoundException(
-                            "Savings account not found: " + id
-                    )
-            );
-
+                new SavingsNotFoundException(
+                        "Savings account not found: " + id
+                )
+        );
     ensureSavingsActive(savings);
 
     LocalDateTime now = LocalDateTime.now();
@@ -285,10 +281,10 @@ public SavingsResponse calculateInterest(UUID id) {
         Savings savings = savingsRepository
                 .findByIdForUpdate(id)
                 .orElseThrow(() ->
-                        new SavingsNotFoundException(
-                                "Savings account not found: " + id
-                        )
-                );
+                new SavingsNotFoundException(
+                        "Savings account not found: " + id
+                )
+        );
 
         ensureSavingsActive(savings);
 
@@ -313,21 +309,21 @@ private Savings findSavings(UUID id) {
             );
 }
 
-    private void validateAmount(BigDecimal amount) {
+private void validateAmount(BigDecimal amount) {
 
-        if (amount == null ||
-                amount.compareTo(BigDecimal.ZERO) <= 0) {
-            throw new SavingsProcessingException(
-                    "Amount must be greater than zero"
-            );
-        }
-
-        if (amount.scale() > 2) {
-            throw new SavingsProcessingException(
-                    "Amount cannot have more than two decimal places"
-            );
-        }
+    if (amount == null ||
+            amount.compareTo(BigDecimal.ZERO) <= 0) {
+        throw new SavingsProcessingException(
+                "Amount must be greater than zero"
+        );
     }
+
+    if (amount.scale() > 2) {
+        throw new SavingsProcessingException(
+                "Amount cannot have more than two decimal places"
+        );
+    }
+}
 
     private void ensureSavingsActive(Savings savings) {
         if (savings.getStatus() != SavingsStatus.ACTIVE) {
@@ -336,7 +332,6 @@ private Savings findSavings(UUID id) {
             );
         }
     }
-
     private void ensureAccountActive(Account account) {
         if (account.getStatus() != AccountStatus.ACTIVE) {
             throw new SavingsProcessingException(
