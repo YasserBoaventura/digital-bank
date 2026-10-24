@@ -2,6 +2,8 @@ package com.Digital_Bank.transaction.service.impl;
 
 import com.Digital_Bank.account.domain.entity.Account;
 import com.Digital_Bank.account.repository.AccountRepository;
+import com.Digital_Bank.notification.domain.enums.NotificationType;
+import com.Digital_Bank.notification.service.NotificationService;
 import com.Digital_Bank.transaction.domain.emuns.TransactionStatus;
 import com.Digital_Bank.transaction.domain.emuns.TransactionType;
 import com.Digital_Bank.transaction.domain.entity.Transaction;
@@ -26,11 +28,11 @@ public class TransactionServiceImpl  implements TransactionService {
 
     private final TransactionRepository transactionRepository;
     private final AccountRepository accountRepository;
+    private  final NotificationService notificationService;
 
     @Transactional
     public TransactionResponse deposit(
-            CreateTransactionRequest request
-    ) {
+            CreateTransactionRequest request) {
 
         Account account = findByAccountNumberForUpdate(
                 request.accountNumber()
@@ -61,6 +63,14 @@ public class TransactionServiceImpl  implements TransactionService {
         Transaction saved =
                 transactionRepository.save(transaction);
 
+        //save a notification
+        notificationService.createForCustomer(
+                account.getCustomer().getId(),
+                NotificationType.DEPOSIT,
+                "Deposit completed",
+                "Your deposit of " + request.amount()
+                        + " MT has been successfully completed"
+        );
         return toResponse(saved);
     }
 
@@ -71,7 +81,6 @@ public class TransactionServiceImpl  implements TransactionService {
         Account account = findByAccountNumberForUpdate(
                 request.accountNumber()
         );
-
         validateAmount(request.amount());
 
         BigDecimal balanceBefore =
@@ -105,6 +114,15 @@ public class TransactionServiceImpl  implements TransactionService {
 
         Transaction saved =
                 transactionRepository.save(transaction);
+        //save the  notification
+
+         notificationService.createForCustomer(
+                 account.getCustomer().getId() ,
+                NotificationType.WITHDRAWAL,
+                 "Withdrawal processed",
+                 "A withdrawal of "
+                         + request.amount() + " MT was processed."
+        );
 
         return toResponse(saved);
     }

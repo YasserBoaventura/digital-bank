@@ -2,6 +2,8 @@ package com.Digital_Bank.transfer.service.impl;
 import com.Digital_Bank.account.domain.entity.Account;
 import com.Digital_Bank.account.domain.enums.AccountStatus;
 import com.Digital_Bank.account.repository.AccountRepository;
+import com.Digital_Bank.notification.domain.enums.NotificationType;
+import com.Digital_Bank.notification.service.NotificationService;
 import com.Digital_Bank.transaction.domain.emuns.TransactionStatus;
 import com.Digital_Bank.transaction.domain.emuns.TransactionType;
 import com.Digital_Bank.transaction.domain.entity.Transaction;
@@ -35,113 +37,115 @@ import java.util.UUID;
 @Transactional
 public class TransferServiceImpl  implements TransferService {
 
-
         private final TransferRepository transferRepository;
         private final AccountRepository accountRepository;
         private final TransactionRepository transactionRepository;
+        private final NotificationService notificationService;
 
-        @Transactional
-        @Override
+
+    @Transactional
+    @Override
     public TransferResponse create(CreateTransferRequest request) {
 
     if (request.senderAccountNumber()
-            .equals(request.receiverAccountNumber())) {
+        .equals(request.receiverAccountNumber())) {
 
-        throw new SameAccountTransferException(
-                "Sender and receiver accounts must be different"
-        );
+    throw new SameAccountTransferException(
+            "Sender and receiver accounts must be different"
+    );
+
     }
 
 
-    Account sender = accountRepository
-            .findByAccountNumberForUpdate(
-                    request.senderAccountNumber()
-            )
-            .orElseThrow(() ->
-                    new TransferAccountException(
-                            "Sender account not found"
-                    )
-            );
-
-    Account receiver = accountRepository
-            .findByAccountNumberForUpdate(
-                    request.receiverAccountNumber()
-            )
-            .orElseThrow(() ->
-                    new TransferAccountException(
-                            "Receiver account not found"
-                    )
-            );
-
-        validateAccount(sender, "Sender account");
-        validateAccount(receiver, "Receiver account");
-
-        BigDecimal amount = request.amount();
-
-            BigDecimal senderBalanceBefore = sender.getBalance();
-            BigDecimal receiverBalanceBefore = receiver.getBalance();
-
-            if (senderBalanceBefore.compareTo(amount) < 0) {
-
-                throw new InsufficientBalanceException(
-                        "Insufficient account balance"
-                );
-            }
-
-            //Debit sender
-
-            BigDecimal senderBalanceAfter =
-                    senderBalanceBefore.subtract(amount);
-
-            sender.setBalance(senderBalanceAfter);
-
-
-             // Credit receiver
-
-            BigDecimal receiverBalanceAfter =
-                    receiverBalanceBefore.add(amount);
-
-            receiver.setBalance(receiverBalanceAfter);
-
-            accountRepository.save(sender);
-            accountRepository.save(receiver);
-
-            /*
-             * Create transfer
-             */
-            Transfer transfer = Transfer.builder()
-                    .senderAccount(sender)
-                    .receiverAccount(receiver)
-                    .type(TransferType.INTERNAL)
-                    .status(TransferStatus.COMPLETED)
-                    .amount(amount)
-                    .description(request.description())
-                    .build();
-
-            Transfer savedTransfer =
-                    transferRepository.save(transfer);
-
-            /*
-             * Transaction for sender
-             */
-        Transaction senderTransaction = Transaction.builder()
-                .account(sender)
-                .type(TransactionType.TRANSFER_OUT)
-                .status(TransactionStatus.COMPLETED)
-                .amount(amount)
-                .balanceBefore(senderBalanceBefore)
-                .balanceAfter(senderBalanceAfter)
-                .description(
-                        request.description() != null
-                                ? request.description()
-                                : "Transfer to account "
-                                + receiver.getAccountNumber()
+Account sender = accountRepository
+        .findByAccountNumberForUpdate(
+                request.senderAccountNumber()
+        )
+        .orElseThrow(() ->
+                new TransferAccountException(
+                        "Sender account not found"
                 )
+        );
+
+Account receiver = accountRepository
+        .findByAccountNumberForUpdate(
+                request.receiverAccountNumber()
+        )
+        .orElseThrow(() ->
+                new TransferAccountException(
+                        "Receiver account not found"
+                )
+        );
+
+    validateAccount(sender, "Sender account");
+    validateAccount(receiver, "Receiver account");
+
+    BigDecimal amount = request.amount();
+
+        BigDecimal senderBalanceBefore = sender.getBalance();
+        BigDecimal receiverBalanceBefore = receiver.getBalance();
+
+        if (senderBalanceBefore.compareTo(amount) < 0) {
+
+            throw new InsufficientBalanceException(
+                    "Insufficient account balance"
+            );
+    }
+
+        //Debit sender
+
+        BigDecimal senderBalanceAfter =
+                senderBalanceBefore.subtract(amount);
+
+        sender.setBalance(senderBalanceAfter);
+
+
+         // Credit receiver
+
+        BigDecimal receiverBalanceAfter =
+                receiverBalanceBefore.add(amount);
+
+        receiver.setBalance(receiverBalanceAfter);
+
+        accountRepository.save(sender);
+        accountRepository.save(receiver);
+
+        /*
+         * Create transfer
+         */
+        Transfer transfer = Transfer.builder()
+                .senderAccount(sender)
+                .receiverAccount(receiver)
+                .type(TransferType.INTERNAL)
+                .status(TransferStatus.COMPLETED)
+                .amount(amount)
+                .description(request.description())
                 .build();
 
-            /*
-             * Transaction for receiver
-             */
+        Transfer savedTransfer =
+                transferRepository.save(transfer);
+
+        /*
+         * Transaction for sender
+     */
+    Transaction senderTransaction = Transaction.builder()
+            .account(sender)
+            .type(TransactionType.TRANSFER_OUT)
+            .status(TransactionStatus.COMPLETED)
+            .amount(amount)
+            .balanceBefore(senderBalanceBefore)
+            .balanceAfter(senderBalanceAfter)
+            .description(
+                    request.description() != null
+                            ? request.description()
+                            : "Transfer to account "
+                            + receiver.getAccountNumber()
+            )
+            .build();
+
+        /*
+         * Transaction for receiver
+         */
         Transaction receiverTransaction = Transaction.builder()
                 .account(receiver)
                 .type(TransactionType.TRANSFER_IN)
@@ -157,11 +161,33 @@ public class TransferServiceImpl  implements TransferService {
                 )
                 .build();
 
-        transactionRepository.save(senderTransaction);
-        transactionRepository.save(receiverTransaction);
+    transactionRepository.save(senderTransaction);
+    transactionRepository.save(receiverTransaction);
 
-        return mapToResponse(savedTransfer);
-    }
+// Notify the sender
+    notificationService.createForCustomer(
+            sender.getCustomer().getId(),
+            NotificationType.TRANSFER,
+            "Transfer Sent Successfully",
+            "Your transfer of " + amount
+                    + " to account " + receiver.getAccountNumber()
+                    + " has been completed successfully."
+    );
+
+// Notify the receiver
+    notificationService.createForCustomer(
+            receiver.getCustomer().getId(),
+            NotificationType.TRANSFER,
+            "Transfer Received Successfully",
+            "You have received a transfer of " + amount
+                    + " from account " + sender.getAccountNumber()
+                    + "."
+    );
+
+
+    return mapToResponse(savedTransfer);
+}
+
 
     @Transactional(readOnly = true)
     @Override

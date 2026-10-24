@@ -12,6 +12,9 @@ import com.Digital_Bank.card.repository.CardRepository;
 import com.Digital_Bank.card.service.CardService;
 import com.Digital_Bank.card.shared.exception.CardNotFoundException;
 import com.Digital_Bank.card.shared.exception.CardProcessingException;
+import com.Digital_Bank.notification.domain.entity.Notification;
+import com.Digital_Bank.notification.domain.enums.NotificationType;
+import com.Digital_Bank.notification.service.NotificationService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -29,6 +32,7 @@ public class CardServiceImpl implements CardService {
 
         private final CardRepository cardRepository;
         private final AccountRepository accountRepository;
+        private final NotificationService notificationService;
 
         private static final SecureRandom RANDOM = new SecureRandom();
 
@@ -64,6 +68,18 @@ public class CardServiceImpl implements CardService {
             .build();
 
         Card savedCard = cardRepository.save(card);
+
+
+    notificationService.createForCustomer(
+            account.getCustomer().getId(),
+            NotificationType.CARD,
+            "Card Issued Successfully",
+            "Your " + savedCard.getType()
+                    + " card ending in "
+                    + savedCard.getLastFour()
+                    + " has been issued successfully."
+        );
+
 
             return mapToResponse(savedCard);
         }
@@ -190,10 +206,20 @@ public class CardServiceImpl implements CardService {
                     "Only active cards can be blocked"
             );
         }
-
         card.setStatus(CardStatus.BLOCKED);
 
-        return mapToResponse(cardRepository.save(card));
+        Card savedCard = cardRepository.save(card);
+        //save the notify
+        notificationService.createForCustomer(
+                savedCard.getAccount().getCustomer().getId(),
+                NotificationType.CARD,
+                "Card Blocked",
+                "Your card ending in "
+                        + savedCard.getLastFour()
+                        + " has been blocked successfully."
+        );
+
+        return mapToResponse(savedCard);
     }
 
     @Override
@@ -207,19 +233,30 @@ public class CardServiceImpl implements CardService {
             );
         }
 
-            if (!card.getExpiryDate().isAfter(LocalDate.now())) {
-                card.setStatus(CardStatus.EXPIRED);
-                cardRepository.save(card);
+        if (!card.getExpiryDate().isAfter(LocalDate.now())) {
+            card.setStatus(CardStatus.EXPIRED);
+            cardRepository.save(card);
 
-                throw new CardProcessingException(
-                        "Expired cards cannot be unblocked"
-                );
-            }
-
-            card.setStatus(CardStatus.ACTIVE);
-
-            return mapToResponse(cardRepository.save(card));
+            throw new CardProcessingException(
+                    "Expired cards cannot be unblocked"
+            );
         }
+
+        card.setStatus(CardStatus.ACTIVE);
+
+        Card savedCard = cardRepository.save(card);
+
+        notificationService.createForCustomer(
+                savedCard.getAccount().getCustomer().getId(),
+                NotificationType.CARD,
+                "Card Unblocked",
+                "Your card ending in "
+                        + savedCard.getLastFour()
+                        + " has been unblocked successfully."
+        );
+
+        return mapToResponse(savedCard);
+    }
 
         @Override
         @Transactional
@@ -234,7 +271,18 @@ public class CardServiceImpl implements CardService {
 
             card.setStatus(CardStatus.CANCELLED);
 
-            return mapToResponse(cardRepository.save(card));
+            Card savedCard = cardRepository.save(card);
+
+            notificationService.createForCustomer(
+                    savedCard.getAccount().getCustomer().getId(),
+                    NotificationType.CARD,
+                    "Card Cancelled",
+                    "Your card ending in "
+                            + savedCard.getLastFour()
+                            + " has been cancelled."
+            );
+
+            return mapToResponse(savedCard);
         }
 
         private Card getCard(UUID id) {

@@ -35,7 +35,6 @@ public class TransactionController {
         public TransactionResponse withdraw(
                 @Valid @RequestBody CreateTransactionRequest request
         ) {
-
             return transactionService.withdraw(request);
         }
 

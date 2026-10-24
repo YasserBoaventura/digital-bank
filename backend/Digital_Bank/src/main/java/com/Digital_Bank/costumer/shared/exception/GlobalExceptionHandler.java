@@ -7,6 +7,8 @@ import com.Digital_Bank.card.shared.exception.CardProcessingException;
 import com.Digital_Bank.costumer.shared.response.ApiErrorResponse;
 import com.Digital_Bank.loan.shared.exception.LoanNotFoundException;
 import com.Digital_Bank.loan.shared.exception.LoanProcessingException;
+import com.Digital_Bank.notification.shared.exception.NotificationNotFoundException;
+import com.Digital_Bank.notification.shared.exception.NotificationProcessingException;
 import com.Digital_Bank.payment.shared.exception.PaymentNotFoundException;
 import com.Digital_Bank.savings.shared.exception.SavingsNotFoundException;
 import com.Digital_Bank.savings.shared.exception.SavingsProcessingException;
@@ -160,7 +162,37 @@ public class GlobalExceptionHandler {
                 .status(HttpStatus.NOT_FOUND)
                 .body(error);
     }
+    @ExceptionHandler(NotificationNotFoundException.class)
+    public ResponseEntity<ErrorResponse> handleNotificationNotFound(
+            NotificationNotFoundException ex) {
 
+        ErrorResponse error = new ErrorResponse(
+                404,
+                "Notification not found",
+                ex.getMessage(),
+                LocalDateTime.now()
+        );
+
+    return ResponseEntity
+            .status(HttpStatus.NOT_FOUND)
+            .body(error);
+    }
+
+    @ExceptionHandler(NotificationProcessingException.class)
+    public ResponseEntity<ErrorResponse> handleNotificationProcessing(
+            NotificationProcessingException ex) {
+
+        ErrorResponse error = new ErrorResponse(
+                422,
+                "Notification processing error",
+                ex.getMessage(),
+                LocalDateTime.now()
+        );
+
+        return ResponseEntity
+                .status(HttpStatus.UNPROCESSABLE_ENTITY)
+                .body(error);
+    }
 
     @ExceptionHandler(LoanNotFoundException.class)
     public ResponseEntity<ErrorResponse> handleLoanNotFound(
