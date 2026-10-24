@@ -145,15 +145,15 @@ public class LoanServiceImpl  implements LoanService {
     );
     }
 
-        @Override
-        public Page<LoanResponse> findByStatus(
-                LoanStatus status, Pageable pageable
-        ) {
-            return requireResults(
-                    loanRepository.findByStatus(status, pageable),
-                    "No loans found with status: " + status
-            );
-        }
+    @Override
+    public Page<LoanResponse> findByStatus(
+            LoanStatus status, Pageable pageable
+    ) {
+        return requireResults(
+                loanRepository.findByStatus(status, pageable),
+                "No loans found with status: " + status
+        );
+    }
 
         @Override
         public Page<LoanResponse> findByType(
