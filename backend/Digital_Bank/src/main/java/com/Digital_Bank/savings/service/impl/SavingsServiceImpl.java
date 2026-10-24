@@ -6,6 +6,8 @@ import com.Digital_Bank.account.domain.entity.Account;
 import com.Digital_Bank.account.domain.enums.AccountStatus;
 import com.Digital_Bank.account.repository.AccountRepository;
 
+import com.Digital_Bank.notification.domain.enums.NotificationType;
+import com.Digital_Bank.notification.service.NotificationService;
 import com.Digital_Bank.savings.domain.entity.Savings;
 import com.Digital_Bank.savings.domain.enums.SavingsStatus;
 import com.Digital_Bank.savings.dto.request.CreateSavingsRequest;
@@ -49,24 +51,25 @@ public class SavingsServiceImpl implements SavingsService {
         private final SavingsRepository savingsRepository;
         private final AccountRepository accountRepository;
         private final TransactionRepository transactionRepository;
+        private final NotificationService notificationService;
 
 @Override
 @Transactional
 public SavingsResponse create(CreateSavingsRequest request) {
 
     Account account = accountRepository
-            .findByAccountNumberForUpdate(request.accountNumber())
-            .orElseThrow(() ->
-                    new SavingsProcessingException(
-                            "Bank account not found"
-                    )
-            );
-
-    if (account.getStatus() != AccountStatus.ACTIVE) {
-        throw new SavingsProcessingException(
-                "Only active accounts can open savings"
+        .findByAccountNumberForUpdate(request.accountNumber())
+        .orElseThrow(() ->
+                new SavingsProcessingException(
+                        "Bank account not found"
+                )
         );
-    }
+
+if (account.getStatus() != AccountStatus.ACTIVE) {
+    throw new SavingsProcessingException(
+            "Only active accounts can open savings"
+    );
+}
 
     Savings savings = Savings.builder()
             .account(account)
@@ -80,6 +83,13 @@ public SavingsResponse create(CreateSavingsRequest request) {
             .openedAt(LocalDateTime.now())
             .lastInterestCalculationAt(LocalDateTime.now())
             .build();
+//save the notification
+    notificationService.createForCustomer(
+            account.getCustomer().getId(),
+            NotificationType.SAVINGS,
+            "Savings Account Created",
+            "Your savings account has been created successfully."
+    );
 
     return toResponse(savingsRepository.save(savings));
 }
@@ -168,7 +178,14 @@ public SavingsResponse deposit(UUID id, BigDecimal amount) {
 );
     accountRepository.save(account);
     Savings saved = savingsRepository.save(savings);
-
+    //save a notification
+    notificationService.createForCustomer(
+            account.getCustomer().getId(),
+            NotificationType.SAVINGS,
+            "Savings Deposit Successful",
+            "A deposit of " + amount
+                    + " has been made into your savings account."
+    );
     return toResponse(saved);
 }
 @Override
@@ -223,10 +240,18 @@ public SavingsResponse withdraw(UUID id, BigDecimal amount) {
                 TransactionType.DEPOSIT
         )
     );
-
-            accountRepository.save(account);
+             accountRepository.save(account);
             Savings saved = savingsRepository.save(savings);
-
+    // save the  notification
+          notificationService.createForCustomer(
+                account.getCustomer().getId(),
+                NotificationType.SAVINGS,
+                "Savings Withdrawal Successful",
+                "An amount of " + amount
+                        + " has been withdrawn from your savings account "
+                        + savings.getReference()
+                        + " and transferred to your main account."
+        );
             return toResponse(saved);
         }
 

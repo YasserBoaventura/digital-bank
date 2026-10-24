@@ -1,5 +1,7 @@
 package com.Digital_Bank.payment.service.impl;
 
+import com.Digital_Bank.notification.domain.enums.NotificationType;
+import com.Digital_Bank.notification.service.NotificationService;
 import com.Digital_Bank.payment.dto.reponse.PaymentResponse;
 import com.Digital_Bank.payment.repository.PaymentRepository;
 import com.Digital_Bank.payment.service.PaymentService;
@@ -37,77 +39,85 @@ public class PaymentServiceImpl implements PaymentService {
         private final PaymentRepository paymentRepository;
         private final AccountRepository accountRepository;
         private final TransactionRepository transactionRepository;
+        private final NotificationService notificationService;
 
-        @Override
-        @Transactional
-        public PaymentResponse create(
-                CreatePaymentRequest request) {
-            Account account =
-                    findAccountForUpdate(
-                            request.accountNumber()
-                    );
+@Override
+@Transactional
+public PaymentResponse create(CreatePaymentRequest request) {
+    Account account =
+            findAccountForUpdate(
+                    request.accountNumber()
+            );
 
-            validateAccount(account);
+    validateAccount(account);
 
-            validateAmount(request.amount());
+    validateAmount(request.amount());
 
-            BigDecimal balanceBefore =
-                    account.getBalance();
+    BigDecimal balanceBefore =
+            account.getBalance();
 
-            if (balanceBefore.compareTo(request.amount()) < 0) {
-                throw new InsufficientBalanceException(
-                        "Insufficient account balance"
-                );
-            }
+    if (balanceBefore.compareTo(request.amount()) < 0) {
+        throw new InsufficientBalanceException(
+                "Insufficient account balance"
+        );
+    }
 
-            BigDecimal balanceAfter =
-                    balanceBefore.subtract(
-                            request.amount()
-                    );
+    BigDecimal balanceAfter =
+            balanceBefore.subtract(
+                    request.amount()
+            );
 
-            account.setBalance(balanceAfter);
+    account.setBalance(balanceAfter);
 
-            accountRepository.save(account);
+    accountRepository.save(account);
 
-            Payment payment = Payment.builder()
-                    .account(account)
-                    .type(request.type())
-                    .status(PaymentStatus.COMPLETED)
-                    .amount(request.amount())
-                    .description(request.description())
-                    .build();
+    Payment payment = Payment.builder()
+            .account(account)
+            .type(request.type())
+            .status(PaymentStatus.COMPLETED)
+        .amount(request.amount())
+                .description(request.description())
+                .build();
 
-            Payment savedPayment =
-                    paymentRepository.save(payment);
+        Payment savedPayment =
+                paymentRepository.save(payment);
 
-            Transaction transaction = Transaction.builder()
-                    .account(account)
-                    .type(TransactionType.PAYMENT)
-                    .status(TransactionStatus.COMPLETED)
-                    .amount(request.amount())
-                    .balanceBefore(balanceBefore)
-                    .balanceAfter(balanceAfter)
-                    .description(
-                            request.description()
-                    )
-                    .build();
+        Transaction transaction = Transaction.builder()
+                .account(account)
+                .type(TransactionType.PAYMENT)
+                .status(TransactionStatus.COMPLETED)
+                .amount(request.amount())
+                .balanceBefore(balanceBefore)
+                .balanceAfter(balanceAfter)
+                .description(
+                        request.description()
+                )
+                .build();
 
-            transactionRepository.save(transaction);
+        transactionRepository.save(transaction);
 
-            return mapToResponse(savedPayment);
-        }
+        notificationService.createForCustomer(
+                account.getCustomer().getId(),
+                NotificationType.PAYMENT,
+                "Payment Successful",
+                "A payment of " + request.amount()
+                        + " has been completed successfully."
+        );
+
+        return mapToResponse(savedPayment);
+    }
 
         @Override
         @Transactional(readOnly = true)
         public PaymentResponse findById(UUID id) {
 
-            Payment payment =
-                paymentRepository.findById(id)
-                        .orElseThrow(() ->
-                                new PaymentNotFoundException(
-                                        "Payment not found"
-                                )
-                        );
+        Payment payment =
+            paymentRepository.findById(id)
+                    .orElseThrow(() ->
+                            new PaymentNotFoundException(
+                                    "Payment not found"
+                            )
+                    );
 
             return mapToResponse(payment);
         }
@@ -118,14 +128,14 @@ public class PaymentServiceImpl implements PaymentService {
                 String reference
         ) {
 
-            Payment payment =
-                    paymentRepository
-                            .findByReference(reference)
-                            .orElseThrow(() ->
-                                    new PaymentNotFoundException(
-                                            "Payment not found"
-                                    )
-                            );
+        Payment payment =
+            paymentRepository
+                    .findByReference(reference)
+                    .orElseThrow(() ->
+                            new PaymentNotFoundException(
+                                    "Payment not found"
+                            )
+                    );
 
             return mapToResponse(payment);
         }

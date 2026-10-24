@@ -10,6 +10,9 @@ import com.Digital_Bank.costumer.repository.CustomerRepository;
 import com.Digital_Bank.costumer.service.CustomerService;
 import com.Digital_Bank.costumer.shared.exception.BussinesException;
 import com.Digital_Bank.costumer.shared.exception.ResourceNotFoundException;
+import com.Digital_Bank.notification.domain.enums.NotificationType;
+import com.Digital_Bank.notification.service.NotificationService;
+import jakarta.validation.Valid;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.transaction.annotation.Transactional;
@@ -25,20 +28,22 @@ import java.util.UUID;
 public  class  CustomerServiceImpl implements CustomerService {
 
     private final CustomerRepository customerRepository;
+    private final NotificationService notificationService;
 
 @Override
-public CustomerResponse create(CreateCustomerRequest request) {
+@Transactional
+public CustomerResponse create(@Valid CreateCustomerRequest request) {
 
     if (customerRepository.existsByEmail(request.email())) {
-        throw new BussinesException("Email já está cadastrado");
+        throw new BussinesException("The email is already registered");
     }
 
     if (customerRepository.existsByPhone(request.phone())) {
-        throw new BussinesException("Telefone já está cadastrado");
+        throw new BussinesException("The phone number is already registered");
     }
 
     if (customerRepository.existsByDocumentNumber(request.documentNumber())) {
-        throw new BussinesException("Documento já está cadastrado");
+        throw new BussinesException("The documentNumber is already registered");
     }
 
     Customer customer = Customer.builder()
@@ -50,6 +55,15 @@ public CustomerResponse create(CreateCustomerRequest request) {
             .build();
 
     Customer savedCustomer = customerRepository.save(customer);
+//save the notify
+    notificationService.createForCustomer(
+            savedCustomer.getId(),
+            NotificationType.ACCOUNT,
+            "Welcome to Digital Bank!",
+            "Hello " + savedCustomer.getFullName()
+                    + ", your registration has been completed successfully. "
+                    + "Welcome to Digital Bank!"
+    );
 
     return toResponse(savedCustomer);
 }
@@ -60,7 +74,7 @@ public CustomerResponse findById(UUID id) {
 
     Customer customer = customerRepository.findById(id)
             .orElseThrow(() ->
-                    new ResourceNotFoundException("Cliente não encontrado"));
+                    new ResourceNotFoundException("customer not found"));
 
     return toResponse(customer);
 }
@@ -85,13 +99,14 @@ public List<CustomerResponse> findAll() {
 }
 
 @Override
+@Transactional
 public CustomerResponse update(
         UUID id,
         UpdateCustomerRequest request) {
 
     Customer customer = customerRepository.findById(id)
             .orElseThrow(() ->
-                    new ResourceNotFoundException("Cliente não encontrado"));
+                    new ResourceNotFoundException("Costumer not found"));
 
     if (request.fullName() != null) {
         customer.setFullName(request.fullName());
@@ -101,7 +116,7 @@ public CustomerResponse update(
             !request.email().equals(customer.getEmail())) {
 
         if (customerRepository.existsByEmail(request.email())) {
-            throw new BussinesException("Email já está cadastrado");
+            throw new BussinesException("The email is already registered");
         }
 
         customer.setEmail(request.email());
@@ -111,7 +126,7 @@ public CustomerResponse update(
             !request.phone().equals(customer.getPhone())) {
 
         if (customerRepository.existsByPhone(request.phone())) {
-            throw new BussinesException("Telefone já está cadastrado");
+            throw new BussinesException("The phone is already registered");
         }
 
         customer.setPhone(request.phone());
@@ -119,91 +134,137 @@ public CustomerResponse update(
     if (request.dateOfBirth() != null) {
         customer.setDateOfBirth(request.dateOfBirth());
     }
+    notificationService.createForCustomer(
+            customer.getId(),
+            NotificationType.CUSTOMER,
+            "Customer Profile Updated",
+            "Your personal information has been updated successfully."
+    );
+
     return toResponse(customer);
 }
 
 @Override
+@Transactional
 public void delete(UUID id) {
-
     Customer customer = customerRepository.findById(id)
             .orElseThrow(() ->
-                    new ResourceNotFoundException("Cliente não encontrado"));
+                    new ResourceNotFoundException("Customer not found"));
 
     customer.setStatus(
         CustomerStatus.INACTIVE
     );
-}
-
-@Override
-public CustomerResponse activate(UUID id) {
-
-Customer customer = customerRepository.findById(id)
-        .orElseThrow(() ->
-                new ResourceNotFoundException("Cliente não encontrado"));
-
-if (customer.getStatus() == CustomerStatus.BLOCKED) {
-    throw new BussinesException(
-            "Cliente bloqueado não pode ser ativado diretamente"
+    notificationService.createForCustomer(
+            customer.getId(),
+            NotificationType.CUSTOMER,
+            "Customer Record Deleted",
+            "Your customer record has been deleted."
     );
+
 }
+    @Override
+    @Transactional
+    public CustomerResponse activate(UUID id) {
 
-customer.setStatus(CustomerStatus.ACTIVE);
+        Customer customer = customerRepository.findById(id)
+                .orElseThrow(() ->
+                        new ResourceNotFoundException("Customer not found"));
 
-return toResponse(customer);
-}
+        if (customer.getStatus() == CustomerStatus.BLOCKED) {
+            throw new BussinesException(
+                    "A blocked customer cannot be activated directly."
+            );
+        }
 
-@Override
-public CustomerResponse deactivate(UUID id) {
+        customer.setStatus(CustomerStatus.ACTIVE);
 
-Customer customer = customerRepository.findById(id)
-        .orElseThrow(() ->
-        new ResourceNotFoundException("Cliente não encontrado"));
+        notificationService.createForCustomer(
+                customer.getId(),
+                NotificationType.CUSTOMER,
+                "Customer Account Activated",
+                "Your customer account has been activated successfully."
+        );
 
-if (customer.getStatus() == CustomerStatus.BLOCKED) {
-    throw new BussinesException(
-            "Cliente bloqueado não pode ser desativado"
-    );
-}
+        return toResponse(customer);
+    }
 
-customer.setStatus(CustomerStatus.INACTIVE);
+    @Override
+    @Transactional
+    public CustomerResponse deactivate(UUID id) {
 
-return toResponse(customer);
-}
+        Customer customer = customerRepository.findById(id)
+                .orElseThrow(() ->
+                        new ResourceNotFoundException("Customer not found"));
 
-@Override
-public CustomerResponse block(UUID id) {
+        if (customer.getStatus() == CustomerStatus.BLOCKED) {
+            throw new BussinesException(
+                    "A blocked customer cannot be deactivated."
+            );
+        }
 
-Customer customer = customerRepository.findById(id)
-        .orElseThrow(() ->
-                new ResourceNotFoundException("Cliente não encontrado"));
+        customer.setStatus(CustomerStatus.INACTIVE);
 
-if (customer.getStatus() == CustomerStatus.BLOCKED) {
-    throw new BussinesException(
-            "Cliente já está bloqueado"
-    );
-}
+        notificationService.createForCustomer(
+                customer.getId(),
+                NotificationType.CUSTOMER,
+                "Customer Account Deactivated",
+                "Your customer account has been deactivated."
+        );
 
-customer.setStatus(CustomerStatus.BLOCKED);
+        return toResponse(customer);
+    }
 
-return toResponse(customer);
-}
-@Override
-public CustomerResponse unblock(UUID id) {
+    @Override
+    @Transactional
+    public CustomerResponse block(UUID id) {
 
-Customer customer = customerRepository.findById(id)
-        .orElseThrow(() ->
-                new ResourceNotFoundException("Cliente não encontrado"));
+        Customer customer = customerRepository.findById(id)
+                .orElseThrow(() ->
+                        new ResourceNotFoundException("Customer not found"));
 
-if (customer.getStatus() != CustomerStatus.BLOCKED) {
-    throw new BussinesException(
-            "Cliente não está bloqueado"
-    );
-}
+        if (customer.getStatus() == CustomerStatus.BLOCKED) {
+            throw new BussinesException(
+                    "Customer is already blocked."
+            );
+        }
 
-customer.setStatus(CustomerStatus.ACTIVE);
+        customer.setStatus(CustomerStatus.BLOCKED);
 
-return toResponse(customer);
-}
+        notificationService.createForCustomer(
+                customer.getId(),
+                NotificationType.CUSTOMER,
+                "Customer Account Blocked",
+                "Your customer account has been blocked."
+        );
+
+        return toResponse(customer);
+    }
+
+    @Override
+    @Transactional
+    public CustomerResponse unblock(UUID id) {
+
+        Customer customer = customerRepository.findById(id)
+                .orElseThrow(() ->
+                        new ResourceNotFoundException("Customer not found"));
+
+        if (customer.getStatus() != CustomerStatus.BLOCKED) {
+            throw new BussinesException(
+                    "Only blocked customers can be unblocked."
+            );
+        }
+
+        customer.setStatus(CustomerStatus.ACTIVE);
+
+        notificationService.createForCustomer(
+                customer.getId(),
+                NotificationType.CUSTOMER,
+                "Customer Account Unblocked",
+                "Your customer account has been unblocked successfully."
+        );
+
+        return toResponse(customer);
+    }
 private CustomerResponse toResponse(Customer customer) {
 
     return new CustomerResponse(

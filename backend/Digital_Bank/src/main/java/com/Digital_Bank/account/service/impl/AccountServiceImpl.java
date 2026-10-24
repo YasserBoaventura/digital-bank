@@ -12,6 +12,8 @@ import com.Digital_Bank.costumer.domain.enums.CustomerStatus;
 import com.Digital_Bank.costumer.repository.CustomerRepository;
 
 import com.Digital_Bank.costumer.shared.exception.ResourceNotFoundException;
+import com.Digital_Bank.notification.domain.enums.NotificationType;
+import com.Digital_Bank.notification.service.NotificationService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -28,6 +30,7 @@ public class AccountServiceImpl implements AccountService {
 
     private final AccountRepository accountRepository;
     private final CustomerRepository customerRepository;
+    private final NotificationService notificationService;
 
     @Override
     public AccountResponse create(CreateAccountRequest request) {
@@ -35,12 +38,12 @@ public class AccountServiceImpl implements AccountService {
         Customer customer = customerRepository.findById(request.customerId())
                 .orElseThrow(() ->
                         new ResourceNotFoundException(
-                                "Cliente não encontrado"
+                                "customer not found"
                         )
                 );
         if (customer.getStatus() == CustomerStatus.BLOCKED) {
             throw new BussinessException(
-                    "Cliente bloqueado não pode abrir uma conta."
+                    "A blocked client cannot open an account."
             );
 
         }
@@ -57,6 +60,15 @@ public class AccountServiceImpl implements AccountService {
                 .build();
 
         Account savedAccount = accountRepository.save(account);
+
+        notificationService.createForCustomer(
+                customer.getId(),
+                NotificationType.ACCOUNT,
+                "Account Created Successfully",
+                "Your account " + savedAccount.getAccountNumber()
+                        + " has been created successfully."
+        );
+
 
         return toResponse(savedAccount);
     }
@@ -77,7 +89,7 @@ public class AccountServiceImpl implements AccountService {
             .findByAccountNumber(accountNumber)
             .orElseThrow(() ->
                     new ResourceNotFoundException(
-                            "Conta não encontrada"
+                            "account not found"
                     )
             );
 
@@ -91,7 +103,7 @@ public class AccountServiceImpl implements AccountService {
 
         if (!customerRepository.existsById(customerId)) {
             throw new ResourceNotFoundException(
-                    "Cliente não encontrado"
+                    "customer not found"
             );
         }
 
@@ -110,7 +122,7 @@ public class AccountServiceImpl implements AccountService {
 
         if (!customerRepository.existsById(customerId)) {
             throw new ResourceNotFoundException(
-                    "Cliente não encontrado"
+                    "customer not found"
             );
         }
         return accountRepository
@@ -144,10 +156,18 @@ public class AccountServiceImpl implements AccountService {
 
         if (account.getStatus() == AccountStatus.BLOCKED) {
             throw new BussinessException(
-                    "Conta bloqueada não pode ser ativada."
+                    "Blocked account cannot be activated"
             );
         }
         account.setStatus(AccountStatus.ACTIVE);
+        //save the notify
+        notificationService.createForCustomer(
+                account.getCustomer().getId(),
+                NotificationType.ACCOUNT,
+                "Account Activated",
+                "Your account " + account.getAccountNumber()
+                        + " has been activated successfully."
+        );
 
         return toResponse(accountRepository.save(account));
     }
@@ -159,12 +179,19 @@ public class AccountServiceImpl implements AccountService {
 
         if (account.getStatus() == AccountStatus.BLOCKED) {
             throw new BussinessException(
-                    "Conta bloqueada não pode ser desativada."
+                    "Blocked account cannot be deactivated."
             );
         }
 
         account.setStatus(AccountStatus.INACTIVE);
-
+        //save the notify
+        notificationService.createForCustomer(
+                account.getCustomer().getId(),
+                NotificationType.ACCOUNT,
+                "Account Deactivated",
+                "Your account " + account.getAccountNumber()
+                        + " has been deactivated."
+        );
         return toResponse(accountRepository.save(account));
     }
 
@@ -175,10 +202,17 @@ public class AccountServiceImpl implements AccountService {
 
         if (account.getStatus() == AccountStatus.BLOCKED) {
             throw new BussinessException(
-                    "Conta já está bloqueada."
+                    "The account is already blocked."
             );
         }
-
+        //save the notify
+        notificationService.createForCustomer(
+                account.getCustomer().getId(),
+                NotificationType.ACCOUNT,
+                "Account Blocked",
+                "Your account " + account.getAccountNumber()
+                        + " has been blocked. Please contact the bank for assistance."
+        );
         account.setStatus(AccountStatus.BLOCKED);
 
         return toResponse(accountRepository.save(account));
@@ -186,12 +220,12 @@ public class AccountServiceImpl implements AccountService {
 
     private Account findAccount(UUID id) {
 
-        return accountRepository.findById(id)
-                .orElseThrow(() ->
-                        new ResourceNotFoundException(
-                                "Conta não encontrada"
-                        )
-                );
+    return accountRepository.findById(id)
+            .orElseThrow(() ->
+                    new ResourceNotFoundException(
+                            "account not found"
+                    )
+            );
     }
 
     private String generateAccountNumber() {

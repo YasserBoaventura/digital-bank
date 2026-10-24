@@ -14,6 +14,8 @@ import com.Digital_Bank.loan.dto.response.LoanResponse;
 import com.Digital_Bank.loan.repository.LoanRepository;
 import com.Digital_Bank.loan.shared.exception.LoanNotFoundException;
 import com.Digital_Bank.loan.shared.exception.LoanProcessingException;
+import com.Digital_Bank.notification.domain.enums.NotificationType;
+import com.Digital_Bank.notification.service.NotificationService;
 import com.Digital_Bank.transaction.domain.emuns.TransactionStatus;
 import com.Digital_Bank.transaction.domain.emuns.TransactionType;
 import com.Digital_Bank.transaction.domain.entity.Transaction;
@@ -39,6 +41,7 @@ public class LoanServiceImpl  implements LoanService {
     private final LoanRepository loanRepository;
     private final AccountRepository accountRepository;
     private final TransactionRepository transactionRepository;
+    private final NotificationService notificationService;
 
     private static final BigDecimal MAX_LOAN_AMOUNT =
             new BigDecimal("1000000.00");
@@ -75,8 +78,21 @@ public class LoanServiceImpl  implements LoanService {
                 .purpose(request.purpose().trim())
                 .build();
 
-            return mapToResponse(loanRepository.save(loan));
-        }
+         Loan savedLoan =   loanRepository.save(loan);
+
+        notificationService.createForCustomer(
+                account.getCustomer().getId(),
+                NotificationType.LOAN,
+                "Loan Request Submitted",
+                "Your loan request for "
+                        + savedLoan.getRequestedAmount()
+                        + " MZN has been submitted successfully "
+                        + "and is pending review."
+        );
+
+        return mapToResponse(savedLoan);
+
+    }
 
         @Override
         public LoanResponse findById(UUID id) {
@@ -116,28 +132,28 @@ public class LoanServiceImpl  implements LoanService {
         );
     }
 
-        @Override
-        public Page<LoanResponse> findByAccountNumberAndType(
-                String accountNumber, LoanType type, Pageable pageable
-        ) {
-        return requireResults(
-                loanRepository.findByAccountAccountNumberAndType(
-                        accountNumber, type, pageable
-                ),
-                "No loans found for account " + accountNumber
-                        + " with type " + type
-        );
-        }
+    @Override
+    public Page<LoanResponse> findByAccountNumberAndType(
+            String accountNumber, LoanType type, Pageable pageable
+    ) {
+    return requireResults(
+            loanRepository.findByAccountAccountNumberAndType(
+                    accountNumber, type, pageable
+            ),
+            "No loans found for account " + accountNumber
+                    + " with type " + type
+    );
+    }
 
-        @Override
-        public Page<LoanResponse> findByStatus(
-                LoanStatus status, Pageable pageable
-        ) {
-            return requireResults(
-                    loanRepository.findByStatus(status, pageable),
-                    "No loans found with status: " + status
-            );
-        }
+    @Override
+    public Page<LoanResponse> findByStatus(
+            LoanStatus status, Pageable pageable
+    ) {
+        return requireResults(
+                loanRepository.findByStatus(status, pageable),
+                "No loans found with status: " + status
+        );
+    }
 
         @Override
         public Page<LoanResponse> findByType(
@@ -203,7 +219,33 @@ public class LoanServiceImpl  implements LoanService {
             loan.setOutstandingBalance(BigDecimal.ZERO.setScale(2));
         }
 
-        return mapToResponse(loanRepository.save(loan));
+
+        Loan savedLoan = loanRepository.save(loan);
+
+        if (savedLoan.getStatus() == LoanStatus.APPROVED) {
+            notificationService.createForCustomer(
+                    savedLoan.getAccount().getCustomer().getId(),
+                    NotificationType.LOAN,
+                    "Loan Approved",
+                    "Congratulations! Your loan request "
+                            + savedLoan.getReference()
+                            + " has been approved. Approved amount: "
+                            + savedLoan.getApprovedAmount()
+                            + " MZN. Please review your repayment details."
+            );
+        } else {
+            notificationService.createForCustomer(
+                    savedLoan.getAccount().getCustomer().getId(),
+                    NotificationType.LOAN,
+                    "Loan Rejected",
+                    "Your loan request " + savedLoan.getReference()
+                            + " has been rejected. Reason: "
+                            + savedLoan.getRejectionReason()
+            );
+        }
+
+            return mapToResponse(savedLoan);
+
     }
 
     @Override
@@ -253,7 +295,27 @@ public class LoanServiceImpl  implements LoanService {
             loan.setStatus(LoanStatus.DISBURSED);
             loan.setDisbursedAt(LocalDateTime.now());
 
-            return mapToResponse(loanRepository.save(loan));
+
+
+        loan.setStatus(LoanStatus.DISBURSED);
+        loan.setDisbursedAt(LocalDateTime.now());
+
+        Loan savedLoan = loanRepository.save(loan);
+
+        //save the notify
+        notificationService.createForCustomer(
+                savedLoan.getAccount().getCustomer().getId(),
+                NotificationType.LOAN,
+                "Loan Disbursed Successfully",
+                "Your loan " + savedLoan.getReference()
+                        + " has been disbursed successfully. An amount of "
+                        + amount
+                        + " MZN has been credited to your account."
+        );
+
+        return mapToResponse(savedLoan);
+
+
         }
 
     @Override
@@ -320,6 +382,7 @@ public class LoanServiceImpl  implements LoanService {
 
         transactionRepository.save(transaction);
 
+
         BigDecimal outstanding = loan.getOutstandingBalance()
                 .subtract(payment)
                 .setScale(2, RoundingMode.HALF_UP);
@@ -330,7 +393,35 @@ public class LoanServiceImpl  implements LoanService {
             loan.setStatus(LoanStatus.REPAID);
         }
 
-        return mapToResponse(loanRepository.save(loan));
+        Loan savedLoan = loanRepository.save(loan);
+
+        String title;
+        String message;
+
+        if (savedLoan.getStatus() == LoanStatus.REPAID) {
+            title = "Loan Fully Repaid";
+            message = "Congratulations! Your loan "
+                    + savedLoan.getReference()
+                    + " has been fully repaid. Thank you.";
+        } else {
+            title = "Loan Repayment Successful";
+            message = "Your repayment of " + payment
+                    + " MZN was successful for loan "
+                    + savedLoan.getReference()
+                    + ". Outstanding balance: "
+                    + savedLoan.getOutstandingBalance()
+                    + " MZN.";
+        }
+
+        notificationService.createForCustomer(
+                savedLoan.getAccount().getCustomer().getId(),
+                NotificationType.LOAN,
+                title,
+                message
+        );
+
+        return mapToResponse(savedLoan);
+
     }
 
     @Override
@@ -345,10 +436,20 @@ public class LoanServiceImpl  implements LoanService {
                     "This loan cannot be cancelled in its current status"
             );
         }
-
         loan.setStatus(LoanStatus.CANCELLED);
 
-        return mapToResponse(loanRepository.save(loan));
+        Loan savedLoan = loanRepository.save(loan);
+
+        notificationService.createForCustomer(
+                savedLoan.getAccount().getCustomer().getId(),
+                NotificationType.LOAN,
+                "Loan Request Cancelled",
+                "Your loan request " + savedLoan.getReference()
+                        + " has been cancelled successfully."
+        );
+
+        return mapToResponse(savedLoan);
+
     }
 
     private Loan getLoan(UUID id) {
