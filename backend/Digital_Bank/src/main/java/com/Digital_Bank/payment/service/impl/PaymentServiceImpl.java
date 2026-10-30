@@ -1,5 +1,7 @@
 package com.Digital_Bank.payment.service.impl;
 
+import com.Digital_Bank.audit.domain.enums.AuditAction;
+import com.Digital_Bank.audit.service.AuditService;
 import com.Digital_Bank.notification.domain.enums.NotificationType;
 import com.Digital_Bank.notification.service.NotificationService;
 import com.Digital_Bank.payment.dto.reponse.PaymentResponse;
@@ -35,11 +37,11 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class PaymentServiceImpl implements PaymentService {
 
-
         private final PaymentRepository paymentRepository;
         private final AccountRepository accountRepository;
         private final TransactionRepository transactionRepository;
         private final NotificationService notificationService;
+        private final AuditService auditService;
 
 @Override
 @Transactional
@@ -104,6 +106,13 @@ public PaymentResponse create(CreatePaymentRequest request) {
                         + " has been completed successfully."
         );
 
+    auditService.record(
+            null,
+            AuditAction.PAYMENT,
+            "Payment",
+            payment.getId().toString(),
+            "Payment created successfully"
+    );
         return mapToResponse(savedPayment);
     }
 

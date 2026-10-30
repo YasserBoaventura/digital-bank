@@ -2,6 +2,8 @@ package com.Digital_Bank.transfer.service.impl;
 import com.Digital_Bank.account.domain.entity.Account;
 import com.Digital_Bank.account.domain.enums.AccountStatus;
 import com.Digital_Bank.account.repository.AccountRepository;
+import com.Digital_Bank.audit.domain.enums.AuditAction;
+import com.Digital_Bank.audit.service.AuditService;
 import com.Digital_Bank.notification.domain.enums.NotificationType;
 import com.Digital_Bank.notification.service.NotificationService;
 import com.Digital_Bank.transaction.domain.emuns.TransactionStatus;
@@ -35,12 +37,13 @@ import java.util.UUID;
 @Service
 @RequiredArgsConstructor
 @Transactional
-public class TransferServiceImpl  implements TransferService {
+public class TransferServiceImpl implements TransferService {
 
         private final TransferRepository transferRepository;
         private final AccountRepository accountRepository;
         private final TransactionRepository transactionRepository;
         private final NotificationService notificationService;
+        private final AuditService auditService;
 
 
     @Transactional
@@ -183,6 +186,15 @@ Account receiver = accountRepository
                     + " from account " + sender.getAccountNumber()
                     + "."
     );
+
+     //save for audit use
+        auditService.record(
+                null,
+                AuditAction.TRANSFER,
+                "TRANSFER",
+                savedTransfer.getId().toString(),
+                "Internal transfer completed successfully"
+        );
 
 
     return mapToResponse(savedTransfer);

@@ -4,6 +4,7 @@ package com.Digital_Bank.notification.service.impl;
 
 import com.Digital_Bank.costumer.domain.entity.Customer;
 import com.Digital_Bank.costumer.repository.CustomerRepository;
+import com.Digital_Bank.costumer.shared.exception.ResourceNotFoundException;
 import com.Digital_Bank.notification.domain.entity.Notification;
 import com.Digital_Bank.notification.domain.enums.NotificationStatus;
 import com.Digital_Bank.notification.domain.enums.NotificationType;
@@ -75,6 +76,11 @@ Customer customer = customerRepository
             NotificationStatus status,
             Pageable pageable) {
 
+        if (!customerRepository.existsById(customerId)) {
+            throw new ResourceNotFoundException(
+                    "Customer not found with id: " + customerId
+            );
+        }
         Page<Notification> notifications;
 
         if (status == null) {
@@ -121,6 +127,11 @@ Customer customer = customerRepository
     @Transactional
     public void markAllAsRead(UUID customerId) {
 
+        if (!customerRepository.existsById(customerId)) {
+            throw new ResourceNotFoundException(
+                    "Customer not found with id: " + customerId
+            );
+        }
          notificationRepository.markAllAsRead(
                 customerId,
                 NotificationStatus.READ,
@@ -171,8 +182,6 @@ Customer customer = customerRepository
 
         return create(request);
     }
-
-
 
 // SECURITY AND SYSTEM
 

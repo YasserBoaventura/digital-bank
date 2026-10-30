@@ -7,10 +7,12 @@ import com.Digital_Bank.account.dto.response.AccountResponse;
 import com.Digital_Bank.account.repository.AccountRepository;
 import com.Digital_Bank.account.service.AccountService;
 import com.Digital_Bank.account.shared.exception.BussinessException;
+import com.Digital_Bank.audit.domain.enums.AuditAction;
+import com.Digital_Bank.audit.service.AuditService;
 import com.Digital_Bank.costumer.domain.entity.Customer;
 import com.Digital_Bank.costumer.domain.enums.CustomerStatus;
 import com.Digital_Bank.costumer.repository.CustomerRepository;
-
+import java.math.*;
 import com.Digital_Bank.costumer.shared.exception.ResourceNotFoundException;
 import com.Digital_Bank.notification.domain.enums.NotificationType;
 import com.Digital_Bank.notification.service.NotificationService;
@@ -31,21 +33,23 @@ public class AccountServiceImpl implements AccountService {
     private final AccountRepository accountRepository;
     private final CustomerRepository customerRepository;
     private final NotificationService notificationService;
+    private final AuditService auditService;
+
+
 
     @Override
+    @Transactional
     public AccountResponse create(CreateAccountRequest request) {
 
         Customer customer = customerRepository.findById(request.customerId())
                 .orElseThrow(() ->
-                        new ResourceNotFoundException(
-                                "customer not found"
-                        )
+                        new ResourceNotFoundException("Customer not found")
                 );
+
         if (customer.getStatus() == CustomerStatus.BLOCKED) {
             throw new BussinessException(
-                    "A blocked client cannot open an account."
+                    "A blocked customer cannot open an account."
             );
-
         }
 
         String accountNumber = generateAccountNumber();
@@ -54,13 +58,13 @@ public class AccountServiceImpl implements AccountService {
                 .accountNumber(accountNumber)
                 .type(request.type())
                 .status(AccountStatus.ACTIVE)
-                .balance(java.math.BigDecimal.ZERO)
+                .balance(BigDecimal.ZERO)
                 .currency("MZN")
                 .customer(customer)
                 .build();
 
         Account savedAccount = accountRepository.save(account);
-
+//notify
         notificationService.createForCustomer(
                 customer.getId(),
                 NotificationType.ACCOUNT,
@@ -68,7 +72,14 @@ public class AccountServiceImpl implements AccountService {
                 "Your account " + savedAccount.getAccountNumber()
                         + " has been created successfully."
         );
-
+//audit
+        auditService.record(
+                null,
+                AuditAction.CREATE,
+                "ACCOUNT",
+                savedAccount.getId().toString(),
+                "Bank account created successfully"
+        );
 
         return toResponse(savedAccount);
     }
@@ -95,7 +106,6 @@ public class AccountServiceImpl implements AccountService {
 
         return toResponse(account);
     }
-
     @Override
     @Transactional(readOnly = true)
     public List<AccountResponse> findByCustomer(
@@ -169,6 +179,13 @@ public class AccountServiceImpl implements AccountService {
                         + " has been activated successfully."
         );
 
+        auditService.record(
+                null,
+                AuditAction.ACTIVATE,
+                "Account",
+                account.getId().toString(),
+                "Card created successfully"
+        );
         return toResponse(accountRepository.save(account));
     }
 
@@ -192,6 +209,14 @@ public class AccountServiceImpl implements AccountService {
                 "Your account " + account.getAccountNumber()
                         + " has been deactivated."
         );
+        //save de adit use
+        auditService.record(
+                null,
+                AuditAction.CREATE,
+                "Account",
+                account.getId().toString(),
+                "Account deactivated successfully"
+        );
         return toResponse(accountRepository.save(account));
     }
 
@@ -214,6 +239,14 @@ public class AccountServiceImpl implements AccountService {
                         + " has been blocked. Please contact the bank for assistance."
         );
         account.setStatus(AccountStatus.BLOCKED);
+
+        auditService.record(
+                null,
+                AuditAction.CREATE,
+                "Account",
+                account.getId().toString(),
+                "Card blocked successfully"
+        );
 
         return toResponse(accountRepository.save(account));
     }

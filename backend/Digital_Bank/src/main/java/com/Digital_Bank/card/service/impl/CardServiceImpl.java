@@ -3,6 +3,8 @@ package com.Digital_Bank.card.service.impl;
 import com.Digital_Bank.account.domain.entity.Account;
 import com.Digital_Bank.account.domain.enums.AccountStatus;
 import com.Digital_Bank.account.repository.AccountRepository;
+import com.Digital_Bank.audit.domain.enums.AuditAction;
+import com.Digital_Bank.audit.service.AuditService;
 import com.Digital_Bank.card.domain.entity.Card;
 import com.Digital_Bank.card.domain.enums.CardStatus;
 import com.Digital_Bank.card.domain.enums.CardType;
@@ -15,6 +17,7 @@ import com.Digital_Bank.card.shared.exception.CardProcessingException;
 import com.Digital_Bank.notification.domain.entity.Notification;
 import com.Digital_Bank.notification.domain.enums.NotificationType;
 import com.Digital_Bank.notification.service.NotificationService;
+import jakarta.transaction.TransactionScoped;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -33,6 +36,7 @@ public class CardServiceImpl implements CardService {
         private final CardRepository cardRepository;
         private final AccountRepository accountRepository;
         private final NotificationService notificationService;
+        private final AuditService auditService;
 
         private static final SecureRandom RANDOM = new SecureRandom();
 
@@ -80,6 +84,14 @@ public class CardServiceImpl implements CardService {
                     + " has been issued successfully."
         );
 
+        auditService.record(
+                null,
+                AuditAction.CREATE,
+                "Card",
+                 card.getId().toString(),
+                "Card created successfully"
+        );
+
 
             return mapToResponse(savedCard);
         }
@@ -89,94 +101,94 @@ public class CardServiceImpl implements CardService {
             return mapToResponse(getCard(id));
         }
 
-        @Override
-        public CardResponse findByReference(String reference) {
-            Card card = cardRepository.findByReference(reference)
-                .orElseThrow(() -> new CardNotFoundException(
-                        "Card not found with reference: " + reference
-                ));
+    @Override
+    public CardResponse findByReference(String reference) {
+        Card card = cardRepository.findByReference(reference)
+            .orElseThrow(() -> new CardNotFoundException(
+                    "Card not found with reference: " + reference
+            ));
 
-            return mapToResponse(card);
-        }
-
-        @Override
-        public Page<CardResponse> findByAccountNumber(
-                String accountNumber,
-                Pageable pageable
-        ) {
-            Page<CardResponse> cards = cardRepository
-                    .findByAccountAccountNumber(accountNumber, pageable)
-                    .map(this::mapToResponse);
-
-            if (cards.isEmpty()) {
-                throw new CardNotFoundException(
-                        "No cards found for account number: " + accountNumber
-                );
-            }
-
-            return cards;
-        }
+        return mapToResponse(card);
+    }
 
     @Override
-    public Page<CardResponse> findByAccountNumberAndStatus(
+    public Page<CardResponse> findByAccountNumber(
             String accountNumber,
-            CardStatus status,
             Pageable pageable
     ) {
-
-        Page<Card> accountCards = cardRepository
-                .findByAccountAccountNumber(accountNumber, pageable);
-
-        if (accountCards.isEmpty()) {
-            throw new CardNotFoundException(
-                    "No card exists for account number: " + accountNumber
-            );
-        }
-
         Page<CardResponse> cards = cardRepository
-                .findByAccountAccountNumberAndStatus(
-                        accountNumber, status, pageable
-                )
+                .findByAccountAccountNumber(accountNumber, pageable)
                 .map(this::mapToResponse);
 
         if (cards.isEmpty()) {
             throw new CardNotFoundException(
-                    "No cards found for this account with status: " + status
+                    "No cards found for account number: " + accountNumber
             );
         }
 
         return cards;
     }
 
-    @Override
-    public Page<CardResponse> findByAccountNumberAndType(
-            String accountNumber,
-            CardType type,
-            Pageable pageable
-    ) {
+@Override
+public Page<CardResponse> findByAccountNumberAndStatus(
+        String accountNumber,
+        CardStatus status,
+        Pageable pageable
+) {
 
-        Page<Card> accountCards = cardRepository
-                .findByAccountAccountNumber(accountNumber, pageable);
+    Page<Card> accountCards = cardRepository
+            .findByAccountAccountNumber(accountNumber, pageable);
 
-        if (accountCards.isEmpty()) {
-            throw new CardNotFoundException(
-                    "No card exists for account number: " + accountNumber
-            );
-        }
-        Page<CardResponse> cards = cardRepository
-                .findByAccountAccountNumberAndType(
-                        accountNumber, type, pageable
-                )
-                .map(this::mapToResponse);
-
-        if (cards.isEmpty()) {
-            throw new CardNotFoundException(
-                    "No cards found for this account with type: " + type
-            );
-        }
-
-        return cards;
+    if (accountCards.isEmpty()) {
+        throw new CardNotFoundException(
+                "No card exists for account number: " + accountNumber
+        );
     }
+
+    Page<CardResponse> cards = cardRepository
+            .findByAccountAccountNumberAndStatus(
+                    accountNumber, status, pageable
+            )
+            .map(this::mapToResponse);
+
+    if (cards.isEmpty()) {
+        throw new CardNotFoundException(
+                "No cards found for this account with status: " + status
+        );
+    }
+
+    return cards;
+}
+
+@Override
+public Page<CardResponse> findByAccountNumberAndType(
+        String accountNumber,
+        CardType type,
+        Pageable pageable
+) {
+
+    Page<Card> accountCards = cardRepository
+            .findByAccountAccountNumber(accountNumber, pageable);
+
+    if (accountCards.isEmpty()) {
+        throw new CardNotFoundException(
+                "No card exists for account number: " + accountNumber
+        );
+    }
+    Page<CardResponse> cards = cardRepository
+            .findByAccountAccountNumberAndType(
+                    accountNumber, type, pageable
+            )
+            .map(this::mapToResponse);
+
+    if (cards.isEmpty()) {
+        throw new CardNotFoundException(
+                "No cards found for this account with type: " + type
+        );
+    }
+
+    return cards;
+}
 
     @Override
     public Page<CardResponse> findByStatus(
@@ -218,6 +230,14 @@ public class CardServiceImpl implements CardService {
                         + savedCard.getLastFour()
                         + " has been blocked successfully."
         );
+        //audit
+        auditService.record(
+                null,
+                AuditAction.BLOCK,
+                "Card",
+                card.getId().toString(),
+                "Card blocked successfully"
+        );
 
         return mapToResponse(savedCard);
     }
@@ -254,6 +274,14 @@ public class CardServiceImpl implements CardService {
                         + savedCard.getLastFour()
                         + " has been unblocked successfully."
         );
+        auditService.record(
+                null,
+                AuditAction.UNBLOCK,
+                "Card",
+                card.getId().toString(),
+                "Card unblocked successfully"
+        );
+
 
         return mapToResponse(savedCard);
     }
@@ -273,6 +301,7 @@ public class CardServiceImpl implements CardService {
 
             Card savedCard = cardRepository.save(card);
 
+            //save the notify
             notificationService.createForCustomer(
                     savedCard.getAccount().getCustomer().getId(),
                     NotificationType.CARD,
@@ -282,6 +311,13 @@ public class CardServiceImpl implements CardService {
                             + " has been cancelled."
             );
 
+            auditService.record(
+                    null,
+                    AuditAction.CANCEL,
+                    "Card",
+                    card.getId().toString(),
+                    "Card cancelled successfully"
+            );
             return mapToResponse(savedCard);
         }
 

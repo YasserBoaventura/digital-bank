@@ -1,5 +1,7 @@
 package com.Digital_Bank.costumer.service.impl;
 
+import com.Digital_Bank.audit.domain.enums.AuditAction;
+import com.Digital_Bank.audit.service.AuditService;
 import com.Digital_Bank.costumer.domain.entity.Customer;
 import com.Digital_Bank.costumer.domain.enums.CustomerStatus;
 import com.Digital_Bank.costumer.dto.request.CreateCustomerRequest;
@@ -12,6 +14,7 @@ import com.Digital_Bank.costumer.shared.exception.BussinesException;
 import com.Digital_Bank.costumer.shared.exception.ResourceNotFoundException;
 import com.Digital_Bank.notification.domain.enums.NotificationType;
 import com.Digital_Bank.notification.service.NotificationService;
+import jakarta.annotation.PostConstruct;
 import jakarta.validation.Valid;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -19,6 +22,9 @@ import org.springframework.transaction.annotation.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.lang.reflect.Array;
+import java.util.Arrays;
+import java.util.IntSummaryStatistics;
 import java.util.List;
 import java.util.UUID;
 
@@ -29,6 +35,7 @@ public  class  CustomerServiceImpl implements CustomerService {
 
     private final CustomerRepository customerRepository;
     private final NotificationService notificationService;
+    private  final AuditService auditService;
 
 @Override
 @Transactional
@@ -58,13 +65,20 @@ public CustomerResponse create(@Valid CreateCustomerRequest request) {
 //save the notify
     notificationService.createForCustomer(
             savedCustomer.getId(),
-            NotificationType.ACCOUNT,
+            NotificationType.CUSTOMER,
             "Welcome to Digital Bank!",
             "Hello " + savedCustomer.getFullName()
-                    + ", your registration has been completed successfully. "
+                    + ", your customer registration has been completed successfully. "
                     + "Welcome to Digital Bank!"
     );
-
+    //save the audit use
+    auditService.record(
+            null,
+            AuditAction.CREATE,
+            "CUSTOMER",
+            savedCustomer.getId().toString(),
+            "Customer registered successfully"
+    );
     return toResponse(savedCustomer);
 }
 
@@ -134,11 +148,21 @@ public CustomerResponse update(
     if (request.dateOfBirth() != null) {
         customer.setDateOfBirth(request.dateOfBirth());
     }
+    //save the notify
     notificationService.createForCustomer(
             customer.getId(),
             NotificationType.CUSTOMER,
             "Customer Profile Updated",
             "Your personal information has been updated successfully."
+    );
+
+    //save the audit use
+    auditService.record(
+            null,
+            AuditAction.UPDATE,
+            "CUSTOMER",
+            customer.getId().toString(),
+            "Customer Updated successfully"
     );
 
     return toResponse(customer);
@@ -154,13 +178,21 @@ public void delete(UUID id) {
     customer.setStatus(
         CustomerStatus.INACTIVE
     );
+    //save the notify
     notificationService.createForCustomer(
             customer.getId(),
             NotificationType.CUSTOMER,
             "Customer Record Deleted",
             "Your customer record has been deleted."
     );
-
+    //save the audit use
+    auditService.record(
+            null,
+            AuditAction.DELETE,
+            "CUSTOMER",
+            customer.getId().toString(),
+            "Customer deleted successfully"
+    );
 }
     @Override
     @Transactional
@@ -177,12 +209,20 @@ public void delete(UUID id) {
         }
 
         customer.setStatus(CustomerStatus.ACTIVE);
-
+// save the notify
         notificationService.createForCustomer(
                 customer.getId(),
                 NotificationType.CUSTOMER,
                 "Customer Account Activated",
                 "Your customer account has been activated successfully."
+        );
+        //save the audit use
+        auditService.record(
+                null,
+                AuditAction.ACTIVATE,
+                "CUSTOMER",
+                customer.getId().toString(),
+                "Customer activated successfully"
         );
 
         return toResponse(customer);
@@ -203,12 +243,20 @@ public void delete(UUID id) {
         }
 
         customer.setStatus(CustomerStatus.INACTIVE);
-
-        notificationService.createForCustomer(
+// save the notify
+notificationService.createForCustomer(
                 customer.getId(),
                 NotificationType.CUSTOMER,
                 "Customer Account Deactivated",
                 "Your customer account has been deactivated."
+        );
+//save the audit use
+        auditService.record(
+                null,
+                AuditAction.DEACTIVATE,
+                "CUSTOMER",
+                customer.getId().toString(),
+                "Customer deactivated successfully"
         );
 
         return toResponse(customer);
@@ -237,6 +285,13 @@ public void delete(UUID id) {
                 "Your customer account has been blocked."
         );
 
+        auditService.record(
+                null,
+                AuditAction.BLOCK,
+                "CUSTOMER",
+                customer.getId().toString(),
+                "Customer blocked successfully"
+        );
         return toResponse(customer);
     }
 
@@ -255,14 +310,21 @@ public void delete(UUID id) {
         }
 
         customer.setStatus(CustomerStatus.ACTIVE);
-
+//save the notify
         notificationService.createForCustomer(
                 customer.getId(),
                 NotificationType.CUSTOMER,
                 "Customer Account Unblocked",
                 "Your customer account has been unblocked successfully."
         );
-
+// save the audi use
+        auditService.record(
+                null,
+                AuditAction.UNBLOCK,
+                "CUSTOMER",
+                customer.getId().toString(),
+                "Customer unblocked successfully"
+        );
         return toResponse(customer);
     }
 private CustomerResponse toResponse(Customer customer) {

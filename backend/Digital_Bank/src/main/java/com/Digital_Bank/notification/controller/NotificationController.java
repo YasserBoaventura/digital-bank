@@ -45,7 +45,6 @@ public class NotificationController {
                 .status(HttpStatus.CREATED)
                 .body(response);
     }
-
 // Get notifications for a customer
 @GetMapping("/customer/{customerId}")
 public ResponseEntity<Page<NotificationResponse>> getCustomerNotifications(
@@ -104,7 +103,6 @@ public ResponseEntity<Page<NotificationResponse>> getCustomerNotifications(
                 )
         );
     }
-
     // Mark all customer notifications as read
         @PatchMapping("/customer/{customerId}/read-all")
         public ResponseEntity<Void> markAllAsRead(
@@ -125,7 +123,6 @@ public ResponseEntity<Page<NotificationResponse>> getCustomerNotifications(
                     customerId,
                     notificationId
             );
-
             return ResponseEntity.noContent().build();
         }
 

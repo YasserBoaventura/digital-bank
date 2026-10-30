@@ -6,6 +6,8 @@ import com.Digital_Bank.account.domain.entity.Account;
 import com.Digital_Bank.account.domain.enums.AccountStatus;
 import com.Digital_Bank.account.repository.AccountRepository;
 
+import com.Digital_Bank.audit.domain.enums.AuditAction;
+import com.Digital_Bank.audit.service.AuditService;
 import com.Digital_Bank.notification.domain.enums.NotificationType;
 import com.Digital_Bank.notification.service.NotificationService;
 import com.Digital_Bank.savings.domain.entity.Savings;
@@ -52,6 +54,7 @@ public class SavingsServiceImpl implements SavingsService {
         private final AccountRepository accountRepository;
         private final TransactionRepository transactionRepository;
         private final NotificationService notificationService;
+        private final AuditService auditService;
 
 @Override
 @Transactional
@@ -83,23 +86,36 @@ if (account.getStatus() != AccountStatus.ACTIVE) {
             .openedAt(LocalDateTime.now())
             .lastInterestCalculationAt(LocalDateTime.now())
             .build();
-//save the notification
+
+    Savings savedSavings = savingsRepository.save(savings);
+    //notify
     notificationService.createForCustomer(
             account.getCustomer().getId(),
             NotificationType.SAVINGS,
             "Savings Account Created",
             "Your savings account has been created successfully."
     );
+    //audit
+    auditService.record(
+            null,
+            AuditAction.CREATE,
+            "SAVINGS",
+            savedSavings.getId().toString(),
+            "Savings account created successfully"
+    );
 
-    return toResponse(savingsRepository.save(savings));
+    return toResponse(savedSavings);
+
 }
 
 @Override
+@Transactional(readOnly = true)
 public SavingsResponse findById(UUID id) {
     return toResponse(findSavings(id));
 }
 
 @Override
+@Transactional(readOnly = true)
 public SavingsResponse findByReference(String reference) {
 
     Savings savings = savingsRepository
@@ -186,6 +202,14 @@ public SavingsResponse deposit(UUID id, BigDecimal amount) {
             "A deposit of " + amount
                     + " has been made into your savings account."
     );
+
+    auditService.record(
+            null,
+            AuditAction.DEPOSIT,
+            "Savings",
+            savings.getId().toString(),
+            "Deposited into savings successfully"
+    );
     return toResponse(saved);
 }
 @Override
@@ -240,8 +264,8 @@ public SavingsResponse withdraw(UUID id, BigDecimal amount) {
                 TransactionType.DEPOSIT
         )
     );
-             accountRepository.save(account);
-            Savings saved = savingsRepository.save(savings);
+      accountRepository.save(account);
+      Savings saved = savingsRepository.save(savings);
     // save the  notification
           notificationService.createForCustomer(
                 account.getCustomer().getId(),
@@ -252,6 +276,13 @@ public SavingsResponse withdraw(UUID id, BigDecimal amount) {
                         + savings.getReference()
                         + " and transferred to your main account."
         );
+    auditService.record(
+            null,
+            AuditAction.WITHDRAW,
+            "Savings",
+            savings.getId().toString(),
+            "Withdrawn from savings successfully"
+    );
             return toResponse(saved);
         }
 
@@ -321,8 +352,26 @@ public SavingsResponse calculateInterest(UUID id) {
 
         savings.setStatus(SavingsStatus.CLOSED);
         savings.setClosedAt(LocalDateTime.now());
+        //save the notification
+        notificationService.createForCustomer(
+                savings.getAccount().getCustomer().getId(),
+                NotificationType.SAVINGS,
+                "Savings closed Successful",
+                " Savings closed sucessful"
+        );
+        Savings saved = savingsRepository.save(savings);
 
-        return toResponse(savingsRepository.save(savings));
+        //audit
+        auditService.record(
+                null,
+                AuditAction.CLOSE,
+                "SAVINGS",
+                saved.getId().toString(),
+                "Savings account closed successfully"
+        );
+
+        return toResponse(saved);
+
     }
 
 private Savings findSavings(UUID id) {
