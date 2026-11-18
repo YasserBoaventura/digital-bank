@@ -1,4 +1,7 @@
 package com.Digital_Bank.transfer.controller;
+import com.Digital_Bank.costumer.dto.response.CustomerResponse;
+import com.Digital_Bank.shared.constants.ApiConstants;
+import com.Digital_Bank.shared.response.ApiResponse;
 import com.Digital_Bank.transfer.domain.enums.TransferStatus;
 
 import com.Digital_Bank.transfer.dto.reponse.CreateTransferRequest;
@@ -17,59 +20,64 @@ import org.springframework.web.bind.annotation.*;
 import java.util.UUID;
 
 @RestController
-@RequestMapping("/api/transfers")
+@RequestMapping(ApiConstants.API_BASE_PATH +"/transfers")
 @RequiredArgsConstructor
 public class TransferController {
 
     private final TransferService transferService;
 
         @PostMapping
-        public ResponseEntity<TransferResponse> create(
+        public ResponseEntity<ApiResponse<TransferResponse>> create(
                 @Valid @RequestBody CreateTransferRequest request) {
+             TransferResponse response = transferService.create(request);
 
             return ResponseEntity
                     .status(HttpStatus.CREATED)
-                    .body(transferService.create(request));
+                    .body(ApiResponse.success(
+                            "Transfer created successfully",
+                            response
+                    ));
         }
-
         @GetMapping("/{id}")
-        public ResponseEntity<TransferResponse> findById(
+        public ResponseEntity<ApiResponse<TransferResponse>> findById(
                 @PathVariable UUID id) {
-
+   TransferResponse response = transferService.findById(id);
             return ResponseEntity.ok(
-                    transferService.findById(id)
-            );
+                    ApiResponse.success("Transfer filtered by id retrieved successfully",
+                  response
+            ));
         }
         @GetMapping("/reference/{reference}")
-        public ResponseEntity<TransferResponse> findByReference(
+        public ResponseEntity<ApiResponse<TransferResponse>> findByReference(
                 @PathVariable String reference) {
 
+            TransferResponse response = transferService.findByReference(reference);
+
             return ResponseEntity.ok(
-                    transferService.findByReference(reference)
-            );
+                    ApiResponse.success("Transfer filtered by reference retrieved successfully",
+                            response
+                    ));
+
         }
 
         @GetMapping("/sender/{accountNumber}")
-        public ResponseEntity<Page<TransferResponse>> findBySenderAccount(
+        public ResponseEntity<ApiResponse<Page<TransferResponse>>> findBySenderAccount(
                 @PathVariable  String accountNumber,
                 @RequestParam(defaultValue = "0") int page,
                 @RequestParam(defaultValue = "10") int size
         ) {
+            Pageable pageable = createPageable(page, size);
+            Page<TransferResponse> response =   transferService.findBySenderAccount(
+                    accountNumber,
+                    pageable
+            );
 
-            Pageable pageable = PageRequest.of(
-                    page,
-                    size,
-                    Sort.by(
-                            Sort.Direction.DESC,
-                            "createdAt"
-                    )
-            );
             return ResponseEntity.ok(
-                    transferService.findBySenderAccount(
-                            accountNumber,
-                            pageable
-                    )
-            );
+                    ApiResponse.success("Transfer filtered by reference retrieved successfully",
+                            response
+                    ));
+
+
         }
         @GetMapping("/receiver/{accountNumber}")
         public ResponseEntity<Page<TransferResponse>> findByReceiverAccount(
@@ -115,5 +123,13 @@ public class TransferController {
                     )
             );
         }
+    private Pageable createPageable(int page, int size) {
+        return PageRequest.of(
+                page,
+                size,
+                Sort.by(Sort.Direction.DESC, "createdAt")
+        );
+    }
+
 
 }

@@ -10,11 +10,10 @@ import com.Digital_Bank.costumer.dto.response.CustomerResponse;
 
 import com.Digital_Bank.costumer.repository.CustomerRepository;
 import com.Digital_Bank.costumer.service.CustomerService;
-import com.Digital_Bank.costumer.shared.exception.BussinesException;
-import com.Digital_Bank.costumer.shared.exception.ResourceNotFoundException;
 import com.Digital_Bank.notification.domain.enums.NotificationType;
 import com.Digital_Bank.notification.service.NotificationService;
-import jakarta.annotation.PostConstruct;
+import com.Digital_Bank.shared.exceptions.BussinessException;
+import com.Digital_Bank.shared.exceptions.ResourceNotFoundException;
 import jakarta.validation.Valid;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -22,9 +21,6 @@ import org.springframework.transaction.annotation.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
-import java.lang.reflect.Array;
-import java.util.Arrays;
-import java.util.IntSummaryStatistics;
 import java.util.List;
 import java.util.UUID;
 
@@ -35,22 +31,22 @@ public  class  CustomerServiceImpl implements CustomerService {
 
     private final CustomerRepository customerRepository;
     private final NotificationService notificationService;
-    private  final AuditService auditService;
+    private final AuditService auditService;
 
 @Override
 @Transactional
 public CustomerResponse create(@Valid CreateCustomerRequest request) {
 
     if (customerRepository.existsByEmail(request.email())) {
-        throw new BussinesException("The email is already registered");
+        throw new BussinessException("The email is already registered");
     }
 
     if (customerRepository.existsByPhone(request.phone())) {
-        throw new BussinesException("The phone number is already registered");
+        throw new BussinessException("The phone number is already registered");
     }
 
     if (customerRepository.existsByDocumentNumber(request.documentNumber())) {
-        throw new BussinesException("The documentNumber is already registered");
+        throw new BussinessException("The documentNumber is already registered");
     }
 
     Customer customer = Customer.builder()
@@ -130,7 +126,7 @@ public CustomerResponse update(
             !request.email().equals(customer.getEmail())) {
 
         if (customerRepository.existsByEmail(request.email())) {
-            throw new BussinesException("The email is already registered");
+            throw new BussinessException("The email is already registered");
         }
 
         customer.setEmail(request.email());
@@ -140,7 +136,7 @@ public CustomerResponse update(
             !request.phone().equals(customer.getPhone())) {
 
         if (customerRepository.existsByPhone(request.phone())) {
-            throw new BussinesException("The phone is already registered");
+            throw new BussinessException("The phone is already registered");
         }
 
         customer.setPhone(request.phone());
@@ -203,8 +199,13 @@ public void delete(UUID id) {
                         new ResourceNotFoundException("Customer not found"));
 
         if (customer.getStatus() == CustomerStatus.BLOCKED) {
-            throw new BussinesException(
+            throw new BussinessException(
                     "A blocked customer cannot be activated directly."
+            );
+        }
+        if (customer.getStatus() == CustomerStatus.ACTIVE) {
+            throw new BussinessException(
+                    "Customer is already active."
             );
         }
 
@@ -237,11 +238,15 @@ public void delete(UUID id) {
                         new ResourceNotFoundException("Customer not found"));
 
         if (customer.getStatus() == CustomerStatus.BLOCKED) {
-            throw new BussinesException(
+            throw new BussinessException(
                     "A blocked customer cannot be deactivated."
             );
         }
-
+        if (customer.getStatus() == CustomerStatus.INACTIVE) {
+            throw new BussinessException(
+                    "Customer is already deactivated."
+            );
+        }
         customer.setStatus(CustomerStatus.INACTIVE);
 // save the notify
 notificationService.createForCustomer(
@@ -271,7 +276,7 @@ notificationService.createForCustomer(
                         new ResourceNotFoundException("Customer not found"));
 
         if (customer.getStatus() == CustomerStatus.BLOCKED) {
-            throw new BussinesException(
+            throw new  BussinessException(
                     "Customer is already blocked."
             );
         }
@@ -304,7 +309,7 @@ notificationService.createForCustomer(
                         new ResourceNotFoundException("Customer not found"));
 
         if (customer.getStatus() != CustomerStatus.BLOCKED) {
-            throw new BussinesException(
+            throw new  BussinessException(
                     "Only blocked customers can be unblocked."
             );
         }

@@ -58,8 +58,6 @@ public class TransferServiceImpl implements TransferService {
     );
 
     }
-
-
 Account sender = accountRepository
         .findByAccountNumberForUpdate(
                 request.senderAccountNumber()

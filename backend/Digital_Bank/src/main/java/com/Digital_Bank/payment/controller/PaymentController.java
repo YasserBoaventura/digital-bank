@@ -3,8 +3,11 @@ import com.Digital_Bank.payment.domain.enums.PaymentStatus;
 import com.Digital_Bank.payment.domain.enums.PaymentType;
 import com.Digital_Bank.payment.dto.reponse.PaymentResponse;
 import com.Digital_Bank.payment.dto.request.CreatePaymentRequest;
-
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import com.Digital_Bank.payment.service.PaymentService;
+import com.Digital_Bank.shared.constants.ApiConstants;
+import com.Digital_Bank.shared.response.ApiResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -18,45 +21,58 @@ import org.springframework.web.bind.annotation.*;
 import java.util.UUID;
 
 @RestController
-@RequestMapping("/api/payments")
+@RequestMapping(ApiConstants.API_BASE_PATH+"/payments")
 @RequiredArgsConstructor
 public class PaymentController {
 
-        private final PaymentService paymentService;
+    private final PaymentService paymentService;
 
-        @PostMapping
-        public ResponseEntity<PaymentResponse> create(
-                @Valid @RequestBody CreatePaymentRequest request) {
+    @PostMapping
+    public ResponseEntity<ApiResponse<PaymentResponse>> create(
+            @Valid @RequestBody CreatePaymentRequest request) {
+        PaymentResponse response = paymentService.create(request);
 
-            return ResponseEntity
-                    .status(HttpStatus.CREATED)
-                    .body(
-                            paymentService.create(request)
-                    );
-        }
+        return ResponseEntity
+                .status(HttpStatus.CREATED)
+                .body(ApiResponse.success(
+                        "Payment created successfully",
+                        response
+                ));
 
-        @GetMapping("/{id}")
-        public ResponseEntity<PaymentResponse> findById(
-                @PathVariable UUID id
-        ) {
-            return ResponseEntity.ok(
-                    paymentService.findById(id)
-            );
-        }
+    }
 
-        @GetMapping("/reference/{reference}")
-        public ResponseEntity<PaymentResponse> findByReference(
-                @PathVariable String reference
-        ) {
-            return ResponseEntity.ok(
-                    paymentService.findByReference(
-                            reference
-                    )
-            );
-        }
+    @GetMapping("/{id}")
+    public ResponseEntity<ApiResponse<PaymentResponse>> findById(
+            @PathVariable UUID id
+    ) {
+
+        PaymentResponse response = paymentService.findById(id);
+        return ResponseEntity
+                .status(HttpStatus.CREATED)
+                .body(ApiResponse.success(
+                        "Payment retrieved by accountNumber  successfully ",
+                        response
+                ));
+
+    }
+
+    @GetMapping("/reference/{reference}")
+    public ResponseEntity<ApiResponse<PaymentResponse>> findByReference(
+            @PathVariable String reference
+    ) {
+        PaymentResponse response =   paymentService.findByReference(
+                reference);
+        return ResponseEntity
+                .status(HttpStatus.CREATED)
+                .body(ApiResponse.success(
+                        "Payment retrieved successfully",
+                        response
+                ));
+
+    }
 
         @GetMapping("/account/{accountNumber}")
-        public ResponseEntity<Page<PaymentResponse>>
+        public ResponseEntity<ApiResponse<Page<PaymentResponse>>>
         findByAccountNumber(
 
                 @PathVariable String accountNumber,
@@ -81,149 +97,124 @@ public class PaymentController {
                     )
             );
 
-            return ResponseEntity.ok(
-                    paymentService.findByAccountNumber(
-                            accountNumber,
-                            pageable
-                    )
-            );
+        Page<PaymentResponse> response =   paymentService.findByAccountNumber(
+                accountNumber,
+                pageable
+        );
+
+        return ResponseEntity.ok(
+                ApiResponse.success(
+                        "Account payments filtered by accountNumber retrieved successfully",
+                        response
+                )
+        );
+
         }
+@GetMapping("/account/{accountNumber}/status/{status}")
+public ResponseEntity<ApiResponse<Page<PaymentResponse>>> findByAccountNumberAndStatus(
+        @PathVariable String accountNumber,
+        @PathVariable PaymentStatus status,
+        @RequestParam(defaultValue = "0") int page,
+        @RequestParam(defaultValue = "10") int size
+) {
+    Pageable pageable = createPageable(page, size);
 
-        @GetMapping(
-                "/account/{accountNumber}/status/{status}"
-        )
-        public ResponseEntity<Page<PaymentResponse>>
-        findByAccountNumberAndStatus(@PathVariable String accountNumber, @PathVariable PaymentStatus status,
-                @RequestParam(
-                        defaultValue = "0"
-                )
-                int page,
-
-                @RequestParam(
-                        defaultValue = "10"
-                )
-                int size
-        ) {
-
-            Pageable pageable = PageRequest.of(
-                    page,
-                    size,
-                    Sort.by(
-                            Sort.Direction.DESC,
-                            "createdAt"
-                    )
+    Page<PaymentResponse> response =
+            paymentService.findByAccountNumberAndStatus(
+                    accountNumber,
+                    status,
+                    pageable
             );
 
-            return ResponseEntity.ok(
-                    paymentService
-                            .findByAccountNumberAndStatus(
-                                    accountNumber,
-                                    status,
-                                    pageable
-                            )
-            );
-        }
+    return ResponseEntity.ok(
+            ApiResponse.success(
+                    "Account payments filtered by status retrieved successfully",
+                    response
+            )
+    );
+}
+    @GetMapping("/account/{accountNumber}/type/{type}")
+    public ResponseEntity<ApiResponse<Page<PaymentResponse>>>
+    findByAccountNumberAndType(@PathVariable String accountNumber, @PathVariable PaymentType type,
+            @RequestParam(
+                    defaultValue = "0"
+            )
+            int page,
 
-        @GetMapping("/account/{accountNumber}/type/{type}")
-        public ResponseEntity<Page<PaymentResponse>>
-        findByAccountNumberAndType(@PathVariable String accountNumber, @PathVariable PaymentType type,
+            @RequestParam(
+                    defaultValue = "10"
+            )
+            int size
+    ) {
 
-                @RequestParam(
-                        defaultValue = "0"
+        Pageable pageable = PageRequest.of(
+                page,
+                size,
+                Sort.by(
+                        Sort.Direction.DESC,
+                        "createdAt"
                 )
-                int page,
+        );
 
-                @RequestParam(
-                        defaultValue = "10"
+        Page<PaymentResponse> response =   paymentService
+                .findByAccountNumberAndType(
+                        accountNumber,
+                        type,
+                        pageable
+                );
+
+        return ResponseEntity.ok(
+                ApiResponse.success(
+                        "Account payments filtered by type retrieved successfully",
+                        response
                 )
-                int size
-        ) {
-
-            Pageable pageable = PageRequest.of(
-                    page,
-                    size,
-                    Sort.by(
-                            Sort.Direction.DESC,
-                            "createdAt"
-                    )
-            );
-
-            return ResponseEntity.ok(
-                    paymentService
-                            .findByAccountNumberAndType(
-                                    accountNumber,
-                                    type,
-                                    pageable
-                            )
-            );
-        }
-
+        );
+    }
         @GetMapping("/status/{status}")
-        public ResponseEntity<Page<PaymentResponse>>
-        findByStatus(
+    public ResponseEntity<ApiResponse<Page<PaymentResponse>>> findByStatus(
+            @PathVariable PaymentStatus status,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size
+    ) {
+        Pageable pageable = createPageable(page, size);
 
-                @PathVariable PaymentStatus status,
+        Page<PaymentResponse> response =
+                paymentService.findByStatus(status, pageable);
 
-                @RequestParam(
-                        defaultValue = "0"
+        return ResponseEntity.ok(
+                ApiResponse.success(
+                        "Payments filtered by status retrieved successfully",
+                        response
                 )
-                int page,
+        );
+    }
 
-                @RequestParam(
-                        defaultValue = "10"
+    @GetMapping("/type/{type}")
+    public ResponseEntity<ApiResponse<Page<PaymentResponse>>> findByType(
+            @PathVariable PaymentType type,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size
+    ) {
+        Pageable pageable = createPageable(page, size);
+
+        Page<PaymentResponse> response =
+                paymentService.findByType(type, pageable);
+
+        return ResponseEntity.ok(
+                ApiResponse.success(
+                        "Payments filtered by type retrieved successfully",
+                        response
                 )
-                int size
-        ) {
+        );
+    }
+    // Reusable pagination method
+    private Pageable createPageable(int page, int size) {
+        return PageRequest.of(
+                page,
+                size,
+                Sort.by(Sort.Direction.DESC, "createdAt")
+        );
+    }
 
-            Pageable pageable = PageRequest.of(
-                    page,
-                    size,
-                    Sort.by(
-                            Sort.Direction.DESC,
-                            "createdAt"
-                    )
-            );
-
-            return ResponseEntity.ok(
-                    paymentService.findByStatus(
-                            status,
-                            pageable
-                    )
-            );
-        }
-
-        @GetMapping("/type/{type}")
-        public ResponseEntity<Page<PaymentResponse>>
-        findByType(
-
-                @PathVariable PaymentType type,
-
-                @RequestParam(
-                        defaultValue = "0"
-                )
-                int page,
-
-                @RequestParam(
-                        defaultValue = "10"
-                )
-                int size
-        ) {
-
-            Pageable pageable = PageRequest.of(
-                    page,
-                    size,
-                    Sort.by(
-                            Sort.Direction.DESC,
-                            "createdAt"
-                    )
-            );
-
-            return ResponseEntity.ok(
-                    paymentService.findByType(
-                            type,
-                            pageable
-                    )
-            );
-        }
 
 }
