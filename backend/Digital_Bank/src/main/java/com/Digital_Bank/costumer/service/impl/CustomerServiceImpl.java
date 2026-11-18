@@ -13,6 +13,7 @@ import com.Digital_Bank.costumer.service.CustomerService;
 import com.Digital_Bank.notification.domain.enums.NotificationType;
 import com.Digital_Bank.notification.service.NotificationService;
 import com.Digital_Bank.shared.exceptions.BussinessException;
+import com.Digital_Bank.shared.exceptions.ResourceNotFoundException;
 import jakarta.validation.Valid;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;

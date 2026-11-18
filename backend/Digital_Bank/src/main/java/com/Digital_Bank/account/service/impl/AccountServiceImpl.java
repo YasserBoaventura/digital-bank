@@ -16,6 +16,7 @@ import java.math.*;
 import com.Digital_Bank.notification.domain.enums.NotificationType;
 import com.Digital_Bank.notification.service.NotificationService;
 import com.Digital_Bank.shared.exceptions.BussinessException;
+import com.Digital_Bank.shared.exceptions.ResourceNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -161,6 +162,7 @@ public class AccountServiceImpl implements AccountService {
     }
 
     @Override
+    @Transactional
     public AccountResponse activate(UUID id) {
         Account account = findAccount(id);
 
@@ -190,6 +192,7 @@ public class AccountServiceImpl implements AccountService {
     }
 
     @Override
+    @Transactional
     public AccountResponse deactivate(UUID id) {
 
         Account account = findAccount(id);
@@ -221,6 +224,7 @@ public class AccountServiceImpl implements AccountService {
     }
 
     @Override
+
     public AccountResponse block(UUID id) {
 
         Account account = findAccount(id);
@@ -242,7 +246,39 @@ public class AccountServiceImpl implements AccountService {
 
         auditService.record(
                 null,
-                AuditAction.CREATE,
+                AuditAction.BLOCK,
+                "Account",
+                account.getId().toString(),
+                "Card blocked successfully"
+        );
+
+        return toResponse(accountRepository.save(account));
+    }
+
+    @Override
+    @Transactional
+    public AccountResponse unlock(UUID id) {
+
+        Account account = findAccount(id);
+
+        if (account.getStatus() == AccountStatus.UNLOCKED) {
+            throw new BussinessException(
+                    "The account is already unclocked."
+            );
+        }
+        //save the notify
+        notificationService.createForCustomer(
+                account.getCustomer().getId(),
+                NotificationType.ACCOUNT,
+                "Account Unclocked",
+                "Your account " + account.getAccountNumber()
+                        + " has been Unclocked. Please contact the bank for assistance."
+        );
+        account.setStatus(AccountStatus.UNLOCKED);
+
+        auditService.record(
+                null,
+                AuditAction.UNBLOCK,
                 "Account",
                 account.getId().toString(),
                 "Card blocked successfully"

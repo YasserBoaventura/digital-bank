@@ -199,17 +199,31 @@ public class AccountController {
         );
     }
 
-    @PatchMapping("/{id}/block")
-    public ResponseEntity<ApiResponse<AccountResponse>> block(
+@PatchMapping("/{id}/block")
+public ResponseEntity<ApiResponse<AccountResponse>> block(
+        @PathVariable UUID id
+) { AccountResponse response = accountService.block(id);
+
+    return ResponseEntity.ok(
+            ApiResponse.success(
+                    "Account blocked successfully",
+                    response
+            )
+    );
+}
+
+    @PatchMapping("/{id}/unlock")
+    public ResponseEntity<ApiResponse<AccountResponse>> unlock(
             @PathVariable UUID id
     ) {
-        AccountResponse response = accountService.block(id);
+        AccountResponse response = accountService.unlock(id);
 
         return ResponseEntity.ok(
                 ApiResponse.success(
-                        "Account blocked successfully",
+                        "Account unlock successfully",
                         response
                 )
         );
     }
+
 }

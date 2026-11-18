@@ -13,6 +13,7 @@ import com.Digital_Bank.notification.repository.NotificationRepository;
 import com.Digital_Bank.notification.service.NotificationService;
 import com.Digital_Bank.notification.shared.exception.NotificationNotFoundException;
 import com.Digital_Bank.notification.shared.exception.NotificationProcessingException;
+import com.Digital_Bank.shared.exceptions.ResourceNotFoundException;
 import lombok.RequiredArgsConstructor;
 
 import org.springframework.data.domain.Page;

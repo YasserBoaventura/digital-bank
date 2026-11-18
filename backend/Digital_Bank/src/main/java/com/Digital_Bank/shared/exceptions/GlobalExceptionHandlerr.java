@@ -55,9 +55,9 @@ public class GlobalExceptionHandlerr {
 
     // BUSINESS EXCEPTION
 
-    @ExceptionHandler(BussinesException.class)
+    @ExceptionHandler(BussinessException.class)
     public ResponseEntity<ApiResponse<Void>> handleBusiness(
-            BussinesException exception
+            BussinessException exception
     ) {
 
         return ResponseEntity

@@ -41,7 +41,7 @@ public interface AccountService {
     AccountResponse deactivate(UUID id);
 
     AccountResponse block(UUID id);
-
+    AccountResponse unlock(UUID id);
 
     List<AccountResponse> findAll();
 }
