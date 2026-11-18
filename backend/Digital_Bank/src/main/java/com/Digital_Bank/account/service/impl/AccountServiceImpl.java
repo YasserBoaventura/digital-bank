@@ -6,16 +6,16 @@ import com.Digital_Bank.account.dto.request.CreateAccountRequest;
 import com.Digital_Bank.account.dto.response.AccountResponse;
 import com.Digital_Bank.account.repository.AccountRepository;
 import com.Digital_Bank.account.service.AccountService;
-import com.Digital_Bank.account.shared.exception.BussinessException;
 import com.Digital_Bank.audit.domain.enums.AuditAction;
 import com.Digital_Bank.audit.service.AuditService;
 import com.Digital_Bank.costumer.domain.entity.Customer;
 import com.Digital_Bank.costumer.domain.enums.CustomerStatus;
 import com.Digital_Bank.costumer.repository.CustomerRepository;
 import java.math.*;
-import com.Digital_Bank.costumer.shared.exception.ResourceNotFoundException;
+
 import com.Digital_Bank.notification.domain.enums.NotificationType;
 import com.Digital_Bank.notification.service.NotificationService;
+import com.Digital_Bank.shared.exceptions.BussinessException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -292,7 +292,12 @@ public class AccountServiceImpl implements AccountService {
         );
     }
 
-    public List<Account> findAll(){
-        return accountRepository.findAll();
+    @Override
+    public List<AccountResponse> findAll() {
+
+        return accountRepository.findAll()
+                .stream()
+                .map(this::toResponse)
+                .toList();
     }
 }

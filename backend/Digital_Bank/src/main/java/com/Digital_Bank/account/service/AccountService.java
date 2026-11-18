@@ -43,5 +43,5 @@ public interface AccountService {
     AccountResponse block(UUID id);
 
 
-    List<Account> findAll();
+    List<AccountResponse> findAll();
 }

@@ -2,6 +2,8 @@ package com.Digital_Bank.transaction.service.impl;
 
 import com.Digital_Bank.account.domain.entity.Account;
 import com.Digital_Bank.account.repository.AccountRepository;
+import com.Digital_Bank.audit.domain.enums.AuditAction;
+import com.Digital_Bank.audit.service.AuditService;
 import com.Digital_Bank.notification.domain.enums.NotificationType;
 import com.Digital_Bank.notification.service.NotificationService;
 import com.Digital_Bank.transaction.domain.emuns.TransactionStatus;
@@ -12,6 +14,7 @@ import com.Digital_Bank.transaction.dto.response.TransactionResponse;
 import com.Digital_Bank.transaction.repository.TransactionRepository;
 import com.Digital_Bank.transaction.service.TransactionService;
 import jakarta.persistence.EntityNotFoundException;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.transaction.annotation.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -29,6 +32,8 @@ public class TransactionServiceImpl  implements TransactionService {
     private final TransactionRepository transactionRepository;
     private final AccountRepository accountRepository;
     private  final NotificationService notificationService;
+    private final AuditService auditService;
+
 
     @Transactional
     public TransactionResponse deposit(
@@ -63,13 +68,23 @@ public class TransactionServiceImpl  implements TransactionService {
         Transaction saved =
                 transactionRepository.save(transaction);
 
-        //save a notification
+        //save the notification
         notificationService.createForCustomer(
                 account.getCustomer().getId(),
                 NotificationType.DEPOSIT,
                 "Deposit completed",
                 "Your deposit of " + request.amount()
                         + " MT has been successfully completed"
+        );
+//save the audit use
+        auditService.record(
+                null,
+                AuditAction.DEPOSIT,
+                "TRANSACTION",
+                saved.getId().toString(),
+                "Deposit of " + request.amount()
+                        + " MT completed successfully for account "
+                        + account.getAccountNumber()
         );
         return toResponse(saved);
     }
@@ -114,8 +129,8 @@ public class TransactionServiceImpl  implements TransactionService {
 
         Transaction saved =
                 transactionRepository.save(transaction);
-        //save the  notification
 
+        //save the  notification
          notificationService.createForCustomer(
                  account.getCustomer().getId() ,
                 NotificationType.WITHDRAWAL,
@@ -123,7 +138,16 @@ public class TransactionServiceImpl  implements TransactionService {
                  "A withdrawal of "
                          + request.amount() + " MT was processed."
         );
-
+         //save the audit use
+        auditService.record(
+                null,
+                AuditAction.WITHDRAW,
+                "TRANSACTION",
+                saved.getId().toString(),
+                "Withdrawal of " + request.amount()
+                        + " MT completed successfully from account "
+                        + account.getAccountNumber()
+        );
         return toResponse(saved);
     }
 
@@ -134,11 +158,11 @@ public class TransactionServiceImpl  implements TransactionService {
 
     Transaction transaction =
             transactionRepository.findById(id)
-                    .orElseThrow(() ->
-                            new EntityNotFoundException(
-                                    "Transaction not found: " + id
-                            )
-                    );
+            .orElseThrow(() ->
+                    new EntityNotFoundException(
+                            "Transaction not found: " + id
+                    )
+            );
 
     return toResponse(transaction);
     }
@@ -151,12 +175,12 @@ public class TransactionServiceImpl  implements TransactionService {
     Transaction transaction =
             transactionRepository
             .findByReference(reference)
-            .orElseThrow(() ->
-                    new EntityNotFoundException(
-                            "Transaction not found with reference: "
-                                    + reference
-                    )
-            );
+        .orElseThrow(() ->
+                new EntityNotFoundException(
+                        "Transaction not found with reference: "
+                                + reference
+                )
+        );
 
     return toResponse(transaction);
     }

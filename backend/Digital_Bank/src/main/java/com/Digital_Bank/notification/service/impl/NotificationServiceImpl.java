@@ -4,7 +4,6 @@ package com.Digital_Bank.notification.service.impl;
 
 import com.Digital_Bank.costumer.domain.entity.Customer;
 import com.Digital_Bank.costumer.repository.CustomerRepository;
-import com.Digital_Bank.costumer.shared.exception.ResourceNotFoundException;
 import com.Digital_Bank.notification.domain.entity.Notification;
 import com.Digital_Bank.notification.domain.enums.NotificationStatus;
 import com.Digital_Bank.notification.domain.enums.NotificationType;
@@ -14,7 +13,6 @@ import com.Digital_Bank.notification.repository.NotificationRepository;
 import com.Digital_Bank.notification.service.NotificationService;
 import com.Digital_Bank.notification.shared.exception.NotificationNotFoundException;
 import com.Digital_Bank.notification.shared.exception.NotificationProcessingException;
-import  java.math.*;
 import lombok.RequiredArgsConstructor;
 
 import org.springframework.data.domain.Page;
